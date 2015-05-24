@@ -45,12 +45,12 @@
     </md-toolbar>
 
     <md-content flex id="content">
-        <md-icon md-svg-icon="{{ul.selected.avatar}}" class="avatar"></md-icon>
+        <md-icon md-svg-icon="{{ul.selected.avatar}}" c class="avatar"></md-icon>
         <h2>{{ul.selected.name}}</h2>
-        <p>{{ul.selected.content}}</p>
+        <p>{{ul.userDetail.content}}</p>
 
-        <md-button class="contact" md-no-ink ng-click="ul.showContactOptions($event)" aria-label="Contact User">
-            <md-tooltip>Contact {{ ul.selected.name }}</md-tooltip>
+        <md-button class="contact" md-no-ink ng-click="ul.showContactOptions($event)" aria-label="Contact User" ng-hide="ul.userDetail == null">
+            <md-tooltip>Contact {{ ul.userDetail.name }}</md-tooltip>
             <md-icon md-svg-icon="share"></md-icon>
         </md-button>
     </md-content>

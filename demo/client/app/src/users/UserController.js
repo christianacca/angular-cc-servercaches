@@ -18,6 +18,7 @@
         var self = this;
 
         self.selected = null;
+        self.userDetail = null;
         self.users = [];
         self.selectUser = selectUser;
         self.toggleList = toggleUsersList;
@@ -26,10 +27,10 @@
         // Load all registered users
 
         userService
-            .loadAllUsers()
+            .fetchAllUsers()
             .then(function(users) {
                 self.users = [].concat(users);
-                self.selected = users[0];
+                return selectUser(users[0]);
             });
 
         // *********************************
@@ -43,7 +44,7 @@
         function toggleUsersList() {
             var pending = $mdBottomSheet.hide() || $q.when(true);
 
-            pending.then(function() {
+            return pending.then(function() {
                 $mdSidenav('left').toggle();
             });
         }
@@ -53,8 +54,11 @@
      * @param menuId
      */
         function selectUser(user) {
-            self.selected = angular.isNumber(user) ? $scope.users[user] : user;
-            self.toggleList();
+            self.selected = user;
+            return userService.fetchOneUser(user.name).then(function(userDetail) {
+                self.userDetail = userDetail;
+            })
+            .then(toggleUsersList);
         }
 
         /**

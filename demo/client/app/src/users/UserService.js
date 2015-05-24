@@ -48,7 +48,14 @@
 
         // Promise-based API
         return {
-            loadAllUsers: function() {
+            fetchOneUser: function(name) {
+                var match = users.filter(function(u) {
+                    return u.name === name;
+                });
+                // Simulate async nature of real remote calls
+                return $q.when(match[0]);
+            },
+            fetchAllUsers: function() {
                 // Simulate async nature of real remote calls
                 return $q.when(users);
             }
