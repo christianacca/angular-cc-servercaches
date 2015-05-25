@@ -1,9 +1,10 @@
 ﻿angular
-    .module("starterApp", ["ngRoute", "ngMaterial", "users", "home"])
+    .module("starterApp", ["ngRoute", "ngMaterial", "users", "home", "shared"])
     .config(function($mdThemingProvider, $mdIconProvider) {
 
         $mdIconProvider
             .defaultIconSet("./assets/svg/avatars.svg", 128)
+            .iconSet("nav", "./assets/svg/svg-sprite-navigation.svg", 24)
             .icon("menu", "./assets/svg/menu.svg", 24)
             .icon("share", "./assets/svg/share.svg", 24)
             .icon("google_plus", "./assets/svg/google_plus.svg", 512)
@@ -16,7 +17,7 @@
             .accentPalette("red");
 
     })
-    .config(function ($routeProvider, $locationProvider) {
+    .config(function($routeProvider, $locationProvider) {
         $locationProvider.html5Mode(false);
         $routeProvider.when("/users", {
             controller: "UserController",

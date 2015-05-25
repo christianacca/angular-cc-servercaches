@@ -1,4 +1,9 @@
-<div layout="row">
+<div layout="row" layout-align="center center" ng-if="ul.isInit">
+    <md-progress-circular md-mode="indeterminate"></md-progress-circular>
+</div>
+
+<div layout="row" ng-if="!ul.isInit">
+
     <md-sidenav class="site-sidenav md-sidenav-left md-whiteframe-z2"
                 md-component-id="left"
                 md-is-locked-open="$mdMedia('gt-sm')">
@@ -22,14 +27,17 @@
     <div flex layout="column" tabindex="-1" role="main" class="md-whiteframe-z2">
 
         <md-toolbar layout="row" class="md-whiteframe-z1">
-            <md-button class="menu" hide-gt-sm ng-click="ul.toggleList()" aria-label="Show User List">
+            <md-button class="menu" hide-gt-sm ng-click="ul.toggleUsersList()" aria-label="Show User List">
                 <md-icon md-svg-icon="menu"></md-icon>
             </md-button>
-            <md-button href="#/" aria-label="Back to Main Menu">Main Menu</md-button>
+            <md-button href="#/" aria-label="Back to Main Menu">
+                <md-icon md-svg-icon="nav:ic_arrow_back_24px"></md-icon>
+            </md-button>
             <h1>Angular Material - Starter App</h1>
         </md-toolbar>
 
-        <md-content flex id="content">
+
+        <md-content flex id="content" loading-container="ul.isBusy">
             <md-icon md-svg-icon="{{ul.selected.avatar}}" c class="avatar"></md-icon>
             <h2>{{ul.selected.name}}</h2>
             <p>{{ul.userDetail.content}}</p>
