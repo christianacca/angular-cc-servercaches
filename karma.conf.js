@@ -1,35 +1,36 @@
-module.exports = function(config){
-  config.set({
+module.exports = function (config) {
+    var gulpConfig = require('./gulp.config')();
+    config.set({
 
-    basePath : './',
+        basePath: './',
 
-    files : [
-      'demo/client/app/bower_components/angular/angular.js',
-      'demo/client/app/bower_components/angular-route/angular-route.js',
-      'demo/client/app/bower_components/angular-aria/angular-aria.js',
-      'demo/client/app/bower_components/angular-mocks/angular-mocks.js',
-      'demo/client/app/bower_components/angular-material/angular-material.js',
-      'demo/client/app/components/**/*.js',
-      'demo/client/app/view*/**/*.js'
-    ],
+        files: [
+            'demo/client/app/bower_components/angular/angular.js',
+            'demo/client/app/bower_components/angular-route/angular-route.js',
+            'demo/client/app/bower_components/angular-aria/angular-aria.js',
+            'demo/client/app/bower_components/angular-mocks/angular-mocks.js',
+            'demo/client/app/bower_components/angular-material/angular-material.js',
+            'demo/client/app/components/**/*.js',
+            'demo/client/app/view*/**/*.js'
+        ],
 
-    autoWatch : true,
+        autoWatch: true,
 
-    frameworks: ['jasmine'],
+        frameworks: ['jasmine'],
 
-    browsers : ['Chrome'],
+        browsers: ['Chrome'],
 
-    plugins : [
+        plugins: [
             'karma-chrome-launcher',
             'karma-firefox-launcher',
             'karma-jasmine',
             'karma-junit-reporter'
-            ],
+        ],
 
-    junitReporter : {
-      outputFile: 'test_out/unit.xml',
-      suite: 'unit'
-    }
+        junitReporter: {
+            outputFile: 'test_out/unit.xml',
+            suite: 'unit'
+        }
 
-  });
+    });
 };

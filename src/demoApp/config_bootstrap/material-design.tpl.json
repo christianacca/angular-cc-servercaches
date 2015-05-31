@@ -1,0 +1,8 @@
+﻿{
+    "dev": {
+        "imagePath": "demoApp/sharedResources/images/"
+    },
+    "prod": {
+        "imagePath": "demoApp/images/"
+    }
+}

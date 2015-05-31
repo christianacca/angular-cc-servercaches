@@ -1,0 +1,73 @@
+﻿<table class="table">
+    <thead>
+        <tr>
+            <th>Cache Id</th>
+            <th>Item Count</th>
+            <th>Cache Hit Ratio</th>
+            <th>Last Use</th>
+            <th>Last Write</th>
+            <th>Last Read</th>
+            <th>Last Flush</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr ng-repeat-start="cache in model.caches" ng-class="{ 'warning': cache.isPaused }">
+            <td>{{ cache.cacheId }}</td>
+            <td>{{ cache.itemCount }}</td>
+            <td>{{ cache.cacheHitRatio != null ? ((cache.cacheHitRatio * 100) | number:2) + '%' : undefined }}</td>
+            <td>{{ cache.lastUse | date:'yyyy-MM-dd HH:mm:ss'}} </td>
+            <td>{{ cache.lastWrite | date:'yyyy-MM-dd HH:mm:ss'}} </td>
+            <td>{{ cache.lastRead | date:'yyyy-MM-dd HH:mm:ss'}} </td>
+            <td>{{ cache.lastFlush | date:'yyyy-MM-dd HH:mm:ss'}} </td>
+            <td>
+                <button title="Pause the cache - no new items will be cached and existing cached items will not be served by the cache"
+                        name="pauseCache"
+                        class="btn-sm btn-warning"
+                        ng-if="cache.isPausable && !cache.isPaused"
+                        ng-disabled="isDisabled()"
+                        ram-pause-icon-btn="pauseCache(cache)"></button>
+                <button title="Starts the cache - new items will be cached and existing cached items before the cache was paused will now be served by the cache"
+                        name="startCache"
+                        class="btn-sm btn-success"
+                        ng-if="cache.isPausable && cache.isPaused"
+                        ng-disabled="isDisabled()"
+                        ram-start-icon-btn="startCache(cache)"></button>
+                <button title="Open/Close list" name="listToggle" class="btn btn-link btn-sm" ng-click="toggleList(cache)">
+                    <i class="glyphicon ram-btn-link-icon" ng-class="{ 'glyphicon-chevron-down': !isSelected(cache), 'glyphicon-chevron-up': isSelected(cache)}"></i> 
+                    <span title="Cached item count" ram-std-record-count>{{cache.itemCount}}</span>
+                </button>
+            </td>
+        </tr>
+        <tr ng-repeat-end ng-if="isSelected(cache)">
+            <td colspan="7">
+                <table class="table table-hover table-striped table-condensed">
+                    <thead>
+                        <tr>
+                            <th style="padding-left: 20px">Key</th>
+                            <th>Read Count</th>
+                            <th>Last Write</th>
+                            <th>Last Read</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="itemStat in cache.itemAccessStatistics">
+                            <td style="padding-left: 20px">{{ itemStat.key }}</td>
+                            <td>{{ itemStat.readCount | number }}</td>
+                            <td>{{ itemStat.lastWrite | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                            <td>{{ itemStat.lastRead | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                            <td>
+                                <button title="Removes the item from the cache"
+                                        name="removeItem"
+                                        ng-disabled="cache.isPaused || isDisabled()"
+                                        ram-del-icon-btn="removeItem(cache, itemStat)"></button>
+
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </tbody>
+</table>

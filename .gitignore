@@ -194,3 +194,10 @@ FakesAssemblies/
 
 # Visual Studio 6 workspace options file
 *.opt
+
+# Webstorm
+.idea
+
+# Custom excludes
+.dist.dev/
+.dist.prod/
