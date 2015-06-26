@@ -199,5 +199,7 @@ FakesAssemblies/
 .idea
 
 # Custom excludes
-.dist.dev/
-.dist.prod/
+dist.dev/
+dist.prod/
+dist.comp.dev/
+dist.comp.prod/
