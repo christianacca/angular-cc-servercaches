@@ -22,57 +22,45 @@
 
         ////////////
 
-        function httpExec(httpConfigsGetter, execSettings) {
+        function httpExec(httpConfig, execSettings) {
             execSettings = angular.extend(defaultExecSettings, execSettings || {});
-            return serverCachesConfig()
-                .then(httpConfigsGetter)
-                .then(function(httpConfigs) {
-                    httpConfigs.timeout = execSettings.cancellationToken;
-                    return httpConfigs;
-                })
-                .then($http);
-
+            httpConfig.timeout = execSettings.cancellationToken;
+            return $http(httpConfig);
         }
 
         function fetchAll(execSettings) {
-            var httpConfig = function(configs) {
-                return {
-                    url: configs.url,
-                    method: "get",
-                    params: {
-                        expand: "itemAccessStatistics"
-                    }
-                };
+            var httpRequest = {
+                url: serverCachesConfig.url,
+                method: "get",
+                params: {
+                    expand: "itemAccessStatistics"
+                }
             };
-            return httpExec(httpConfig, execSettings)
+            return httpExec(httpRequest, execSettings)
                 .then(function(response) {
                     return response.data;
                 });
         }
 
         function removeItem(data, execSettings) {
-            var httpConfig = function(configs) {
-                return {
-                    url: utils.combinePaths(configs.url, data.cache.cacheId, data.item.key),
-                    method: "delete"
-                };
+            var httpRequest = {
+                url: utils.combinePaths(serverCachesConfig.url, data.cache.cacheId, data.item.key),
+                method: "delete"
             };
-            return httpExec(httpConfig, execSettings)
+            return httpExec(httpRequest, execSettings)
                 .then(function() {
                     utils.removeInstance(data.cache.itemAccessStatistics, data.item);
                 });
         }
 
         function updateCache(data, execSettings) {
-            var httpConfig = function(configs) {
-                return {
-                    url: utils.combinePaths(configs.url, data.cache.cacheId),
-                    method: "patch",
-                    data: data.delta
-                };
+            var httpRequest = {
+                url: utils.combinePaths(serverCachesConfig.url, data.cache.cacheId),
+                method: "patch",
+                data: data.delta
             };
 
-            return httpExec(httpConfig, execSettings)
+            return httpExec(httpRequest, execSettings)
                 .then(function() {
                     angular.extend(data.cache, data.delta);
                 });

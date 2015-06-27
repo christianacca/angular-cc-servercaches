@@ -99,6 +99,7 @@ pipes.builtVendorScriptsDev = function(config) {
         .pipe(gulp.dest(config.dest));
 };
 
+// moves vendor scripts into the dev environment
 pipes.builtAppVendorScriptsDev = _.partial(pipes.builtVendorScriptsDev, gc.app.bowerComponents.scripts);
 
 pipes.builtVendorScriptsProd = function(config) {
@@ -273,13 +274,13 @@ pipes.builtIndex = function(streams) {
 pipes.builtIndexDev = function() {
 
     var streams = {
-        vendorScripts: pipes.builtAppVendorScriptsDev()
+        vendorScripts: pipes.builtVendorScriptsDev(gc.app.bowerComponents.scripts)
             .pipe(plugins.order(gc.app.bowerComponents.scripts.order)),
-        compScripts: pipes.builtCompScriptsDev().pipe(plugins.angularFilesort()),
+        compScripts: pipes.compFiles("js").pipe(plugins.angularFilesort()),
         appScripts: pipes.builtAppScriptsDev().pipe(plugins.angularFilesort()),
         vendorStyles: pipes.builtAppVendorStylesDev()
             .pipe(plugins.order(gc.app.bowerComponents.styles.order)),
-        compStyles: pipes.builtCompStylesDev(),
+        compStyles: pipes.compFiles("css"),
         appStyles: pipes.builtAppStylesDev()
     };
 
@@ -302,7 +303,10 @@ pipes.builtIndexProd = function() {
 };
 
 pipes.builtAppDev = function() {
-    return es.merge(pipes.builtIndexDev(), pipes.builtAppPartials(), pipes.processedAppImagesDev());
+    // todo: consider a builtVendorPartials that will copy html templates
+    return es.merge(
+        pipes.builtIndexDev(), pipes.builtAppPartials(), pipes.compFiles("html"), pipes.processedAppImagesDev()
+    );
 };
 
 pipes.builtAppProd = function() {
@@ -337,9 +341,6 @@ gulp.task('build-styles-dev', pipes.builtAppStylesDev);
 
 // compiles and minifies app sass to css and moves to the prod environment
 gulp.task('build-styles-prod', pipes.builtAppStylesProd);
-
-// moves vendor scripts into the dev environment
-gulp.task('build-vendor-scripts-dev', pipes.builtAppVendorScriptsDev);
 
 // concatenates, uglifies, and moves vendor scripts into the prod environment
 gulp.task('build-vendor-scripts-prod', pipes.builtAppVendorScriptsProd);
@@ -449,7 +450,12 @@ pipes.builtCompPartials = _.partial(pipes.builtPartials, gc.comp.partials);
 pipes.builtCompStylesDev = _.partial(pipes.builtStylesDev, gc.comp.styles);
 pipes.processedCompImagesDev = _.partial(pipes.processedImagesDev, gc.comp.images);
 
-pipes.builtCompProd = function () {
+pipes.compFiles = function(ext){
+    return gulp.src(gc.comp.rootDist + "**/*." + ext)
+        .pipe(gulp.dest(gc.app.rootDist));
+};
+
+pipes.builtCompDev = function () {
 
     var scripts = pipes.builtCompScriptsDev();
     var styles = pipes.builtCompStylesDev();
@@ -460,4 +466,4 @@ pipes.builtCompProd = function () {
     return es.merge(scripts, styles, partials, images);
 };
 
-gulp.task('build-comp-dev', pipes.builtCompProd);
+gulp.task('build-comp-dev', pipes.builtCompDev);

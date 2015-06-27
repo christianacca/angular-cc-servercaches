@@ -7,7 +7,7 @@ module.exports = function (args) {
     var bowerFolder = 'bower_components/';
 
     var paths = {
-        distRoot: './dist.{{env}}/',
+        distRoot: './dist.demo.{{env}}/',
         srcRoot: 'src/'
     };
 
@@ -70,7 +70,8 @@ module.exports = function (args) {
     };
 
     var compPaths = _.extend({}, paths, {
-        src: 'src/component/'
+        src: 'src/component/',
+        distRoot: './dist.{{env}}/'
     });
     var compConfig = {
         rootDist: compPaths.distRoot,
@@ -122,7 +123,8 @@ module.exports = function (args) {
 
     var config = {
         app: expandConfig(appConfig, args),
-        comp: expandConfig(compConfig, args)
+        comp: expandConfig(compConfig, args),
+        getImagePaths: getImagePaths
     };
 
 
@@ -146,7 +148,7 @@ module.exports = function (args) {
     }
 
     function getImagePaths(baseDir, imageExts) {
-        imageExts = ['svg', 'jpg', 'gif', 'png'] || imageExts;
+        imageExts = imageExts || ['svg', 'jpg', 'gif', 'png'];
         return imageExts.map(function (ext) {
             return baseDir + '**/*.' + ext;
         });

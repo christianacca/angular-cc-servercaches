@@ -201,5 +201,5 @@ FakesAssemblies/
 # Custom excludes
 dist.dev/
 dist.prod/
-dist.comp.dev/
-dist.comp.prod/
+dist.demo.dev/
+dist.demo.prod/
