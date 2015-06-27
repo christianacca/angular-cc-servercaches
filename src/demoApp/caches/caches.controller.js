@@ -4,9 +4,11 @@
         .module("caches")
         .controller("CachesController", CachesController);
 
-    CachesController.$inject = ["ccServerCaches.dataService"];
+    CachesController.$inject = [];
+    //CachesController.$inject = ["ccServerCaches.dataService"];
 
-    function CachesController(serverCachesDataService) {
+    function CachesController() {
+    //function CachesController(serverCachesDataService) {
 //        var self = this;
 
 

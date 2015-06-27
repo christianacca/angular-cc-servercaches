@@ -102,9 +102,12 @@ pipes.builtVendorScriptsDev = function(config) {
 pipes.builtAppVendorScriptsDev = _.partial(pipes.builtVendorScriptsDev, gc.app.bowerComponents.scripts);
 
 pipes.builtVendorScriptsProd = function(config) {
+    // todo: find a way to concatenate existing minified js that does not break sourcemap concept
+    // ie combining all the minified files into one also includes sourceMapUrl for each js file - this
+    // isn't supported by browsers
     return pipes.bowerFiles('min.js')
         .pipe(plugins.order(config.order))
-        .pipe(plugins.concat('bower_components.min.js'))
+        //.pipe(plugins.concat('bower_components.min.js'))
         .pipe(plugins.rev())
         .pipe(gulp.dest(config.dest));
 };
@@ -210,9 +213,12 @@ pipes.builtVendorStylesDev = function(config) {
 pipes.builtAppVendorStylesDev = _.partial(pipes.builtVendorStylesDev, gc.app.bowerComponents.styles);
 
 pipes.builtVendorStylesProd = function(config) {
+    // todo: find a way to concatenate existing minified css that does not break sourcemap concept
+    // ie combining all the minified files into one also includes sourceMapUrl for each css file - this
+    // isn't supported by browsers
     return pipes.bowerFiles('min.css', config.filter)
         .pipe(plugins.order(config.order))
-        .pipe(plugins.concat('bower_components.min.css'))
+        //.pipe(plugins.concat('bower_components.min.css'))
         .pipe(plugins.rev())
         .pipe(gulp.dest(config.dest));
 };

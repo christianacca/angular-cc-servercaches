@@ -1,1 +1,1 @@
-﻿angular.module("starterApp", ["ngRoute", "ngMaterial", "users", "home", "shared"]);
+﻿angular.module("starterApp", ["ngRoute", "ngMaterial", "caches", "users", "home", "shared"]);

@@ -1,31 +1,18 @@
 ﻿<div layout="row">
-    <md-sidenav class="site-sidenav md-sidenav-left md-whiteframe-z2"
-                md-component-id="left"
-                md-is-locked-open="$mdMedia('gt-sm')">
-
-        <md-toolbar class="md-whiteframe-z1">
-            <h1>Menu</h1>
-        </md-toolbar>
-
-        <md-list>
-            <md-list-item>
-                <md-button href="#/users" aria-label="User List">Users</md-button>
-            </md-list-item>
-            <md-list-item>
-                <md-button href="#/caches" aria-label="Cache List">Caches</md-button>
-            </md-list-item>
-        </md-list>
-
-    </md-sidenav>
-
-<!--
     <div flex layout="column" tabindex="-1" role="main" class="md-whiteframe-z2">
 
-        <md-content flex id="content" loading-container="ul.isBusy">
-            <ram-server-caches-list list-model="model"
-                                    class="table-hover table-striped table-condensed"></ram-server-caches-list>
+        <md-toolbar layout="row" class="md-whiteframe-z1">
+            <md-button href="#/" aria-label="Back to Main Menu">
+                <md-icon md-svg-icon="nav:ic_arrow_back_24px"></md-icon>
+            </md-button>
+            <h1>Angular Material - Starter App</h1>
+        </md-toolbar>
+
+
+        <md-content flex id="content">
+            <p>Cache list goes here</p>
         </md-content>
 
     </div>
--->
+
 </div>
