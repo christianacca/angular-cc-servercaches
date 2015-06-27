@@ -4,9 +4,9 @@
     angular.module("ccServerCachesModule")
         .directive("ramServerCachesList", serverCachesList);
 
-    serverCachesList.$inject = [];
+    serverCachesList.$inject = ["ccServerCachesConfig"];
 
-    function serverCachesList() {
+    function serverCachesList(serverCachesConfig) {
         var directive = {
             restrict: "E",
             replace: true,
@@ -14,7 +14,7 @@
                 model: "=listModel",
                 isBusy: "=?listBusy"
             },
-            templateUrl: "app/vendor/angular-ccacca/serverCaches/serverCachesList.html",
+            templateUrl: serverCachesConfig.cacheListTemplateUrl,
             controller: "serverCachesListController"
         };
         return directive;

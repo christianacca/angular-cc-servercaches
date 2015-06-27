@@ -149,25 +149,25 @@ pipes.bowerFiles = function (ext, options) {
     // note: we having to make up for the fact that bower does not have a mechanism to describe minified main and source
     // map files
 
-    var primaryExt, secondaryExt, ternaryExt;
+    var typeExt, minExt, mapExt;
     var extParts = ext.split('.');
-    primaryExt = extParts[1] || extParts[0];
-    secondaryExt = extParts.length > 1 ? extParts[0] : undefined;
-    ternaryExt = extParts[2];
+    typeExt = extParts[1] || extParts[0];
+    minExt = extParts.length > 1 ? extParts[0] : undefined;
+    mapExt = extParts[2];
 
     var fileMapFn;
-    if (!secondaryExt){
+    if (!minExt){
         fileMapFn = _.identity;
     } else {
-        var replacementExt = _.compact([secondaryExt, primaryExt, ternaryExt]).join('.');
+        var replacementExt = _.compact([minExt, typeExt, mapExt]).join('.');
         fileMapFn = function (name) {
-            return name.replace('.' + primaryExt, '.' + replacementExt);
+            return name.replace('.' + typeExt, '.' + replacementExt);
         };
     }
 
     var criteria = {
         dev: options.dev,
-        ext: primaryExt
+        ext: typeExt
     };
     var files = lib.filter(criteria).map(fileMapFn);
     // not sure why gulp-expect-file cannot check files directly :-(
@@ -261,9 +261,11 @@ pipes.builtIndex = function(streams) {
     return pipes.validatedIndex()
         .pipe(gulp.dest(gc.app.rootDist)) // write first to get relative path for inject
         .pipe(plugins.inject(streams.vendorScripts, {relative: true, name: 'bower'}))
+        .pipe(plugins.inject(streams.compScripts, {relative: true, name: 'component'}))
         .pipe(plugins.inject(streams.appScripts, {relative: true}))
-        .pipe(plugins.inject(streams.appStyles, {relative: true}))
-        .pipe(plugins.inject(streams.vendorStyles, {relative: true, name: 'bower'}));
+        .pipe(plugins.inject(streams.vendorStyles, {relative: true, name: 'bower'}))
+        .pipe(plugins.inject(streams.compStyles, {relative: true, name: 'component'}))
+        .pipe(plugins.inject(streams.appStyles, {relative: true}));
 };
 
 
@@ -273,10 +275,12 @@ pipes.builtIndexDev = function() {
     var streams = {
         vendorScripts: pipes.builtAppVendorScriptsDev()
             .pipe(plugins.order(gc.app.bowerComponents.scripts.order)),
+        compScripts: pipes.builtCompScriptsDev().pipe(plugins.angularFilesort()),
         appScripts: pipes.builtAppScriptsDev().pipe(plugins.angularFilesort()),
-        appStyles: pipes.builtAppStylesDev(),
         vendorStyles: pipes.builtAppVendorStylesDev()
-            .pipe(plugins.order(gc.app.bowerComponents.styles.order))
+            .pipe(plugins.order(gc.app.bowerComponents.styles.order)),
+        compStyles: pipes.builtCompStylesDev(),
+        appStyles: pipes.builtAppStylesDev()
     };
 
     return pipes.builtIndex(streams)
@@ -442,22 +446,18 @@ gulp.task('default', ['clean-build-app-prod']);
 pipes.validatedCompScripts = _.partial(pipes.validatedScripts, gc.comp.scripts);
 pipes.builtCompScriptsDev = _.partial(pipes.builtScriptsDev, gc.comp.scripts);
 pipes.builtCompPartials = _.partial(pipes.builtPartials, gc.comp.partials);
-pipes.builtCompVendorScriptsDev = _.partial(pipes.builtVendorScriptsDev, gc.comp.bowerComponents.scripts);
-pipes.builtCompVendorStylesDev = _.partial(pipes.builtVendorStylesDev, gc.comp.bowerComponents.styles);
 pipes.builtCompStylesDev = _.partial(pipes.builtStylesDev, gc.comp.styles);
 pipes.processedCompImagesDev = _.partial(pipes.processedImagesDev, gc.comp.images);
 
-gulp.task('clean-build-comp-dev', ['clean-comp-dev'], function () {
+pipes.builtCompProd = function () {
 
-    var vendorScripts = pipes.builtCompVendorScriptsDev();
     var scripts = pipes.builtCompScriptsDev();
     var styles = pipes.builtCompStylesDev();
-    var vendorStyles = pipes.builtCompVendorStylesDev();
 
     var partials = pipes.builtCompPartials();
     var images = pipes.processedCompImagesDev();
 
-    return es.merge(vendorScripts, scripts, styles, vendorStyles, partials, images);
-});
+    return es.merge(scripts, styles, partials, images);
+};
 
-gulp.task('clean-comp-dev', _.partial(pipes.cleanTaskImpl, gc.comp.rootDist));
+gulp.task('build-comp-dev', pipes.builtCompProd);

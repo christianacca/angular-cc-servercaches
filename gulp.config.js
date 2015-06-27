@@ -6,50 +6,53 @@ module.exports = function (args) {
 
     var bowerFolder = 'bower_components/';
 
-    var appSrcFolder = 'demoApp/';
-    var appPaths = {
-        dist: './dist.{{env}}/',
-        src: 'src/' + appSrcFolder,
-        srcParent: 'src/'
+    var paths = {
+        distRoot: './dist.{{env}}/',
+        srcRoot: 'src/'
     };
+
+    var appSrcFolder = 'demoApp/';
+    var appPaths = _.extend({}, paths, {
+        src: paths.srcRoot + appSrcFolder
+    });
 
 
     var appConfig = {
-        rootDist: appPaths.dist,
+        rootDist: appPaths.distRoot,
         bowerComponents: {
             scripts: {
-                dest: appPaths.dist + bowerFolder,
+                dest: appPaths.distRoot + bowerFolder,
                 filter: null,
                 order: ['jquery.*', 'angular.*']
             },
             styles: {
-                dest: appPaths.dist + bowerFolder,
+                dest: appPaths.distRoot + bowerFolder,
                 filter: null,
                 order: []
             },
-            dest: appPaths.dist + bowerFolder
+            dest: appPaths.distRoot + bowerFolder
         },
         images: {
             src: {
                 path: getImagePaths(appPaths.src),
-                options: {base: appPaths.srcParent}
+                options: {base: appPaths.srcRoot}
             },
-            dest: appPaths.dist
+            dest: appPaths.distRoot
         },
         partials: {
             src: {
                 path: [appPaths.src + '**/*.html'],
-                options: {base: appPaths.srcParent}
+                options: {base: appPaths.srcRoot}
             },
-            dest: appPaths.dist
+            dest: appPaths.distRoot
         },
         scripts: {
             src: {
                 path: appPaths.src + '**/*.js',
-                options: {base: appPaths.srcParent}
+                options: {base: appPaths.srcRoot}
             },
             minifedFile: 'app.min.js',
-            dest: args.env === 'dev' ? appPaths.dist : appPaths.dist + appSrcFolder
+            dest: args.env === 'dev' ? appPaths.distRoot : appPaths.distRoot + appSrcFolder
         },
         scriptsDevServer: {
             src: {
@@ -59,62 +62,60 @@ module.exports = function (args) {
         styles: {
             src: {
                 path: [appPaths.src + '**/*.css', appPaths.src + '**/*.scss'],
-                options: {base: appPaths.srcParent}
+                options: {base: appPaths.srcRoot}
             },
             minifedFile: 'app.min.css',
-            dest: args.env === 'dev' ? appPaths.dist : appPaths.dist + appSrcFolder
+            dest: args.env === 'dev' ? appPaths.distRoot : appPaths.distRoot + appSrcFolder
         }
     };
 
-    var compPaths = {
-        dist: './dist.comp.{{env}}/',
-        src: 'src/component/',
-        srcParent: 'src/'
-    };
+    var compPaths = _.extend({}, paths, {
+        src: 'src/component/'
+    });
     var compConfig = {
-        rootDist: compPaths.dist,
+        rootDist: compPaths.distRoot,
         bowerComponents: {
             scripts: {
-                dest: compPaths.dist + bowerFolder,
+                dest: compPaths.distRoot + bowerFolder,
                 filter: {dev: false},
                 order: []
             },
             styles: {
-                dest: compPaths.dist + bowerFolder,
+                dest: compPaths.distRoot + bowerFolder,
                 filter: {dev: false},
                 order: []
             },
-            dest: compPaths.dist + bowerFolder
+            dest: compPaths.distRoot + bowerFolder
         },
         images: {
             src: {
                 path: getImagePaths(compPaths.src),
-                options: {base: compPaths.srcParent}
+                options: {base: compPaths.srcRoot}
             },
-            dest: compPaths.dist
+            dest: compPaths.distRoot
         },
         partials: {
             src: {
                 path: [compPaths.src + '**/*.html'],
-                options: {base: compPaths.srcParent}
+                options: {base: compPaths.srcRoot}
             },
-            dest: compPaths.dist
+            dest: compPaths.distRoot
         },
         scripts: {
             src: {
                 path: compPaths.src + '**/*.js',
-                options: {base: compPaths.srcParent}
+                options: {base: compPaths.srcRoot}
             },
             minifedFile: 'component.min.js',
-            dest: compPaths.dist
+            dest: compPaths.distRoot
         },
         styles: {
             src: {
                 path: [compPaths.src + '**/*.css', compPaths.src + '**/*.scss'],
-                options: {base: compPaths.srcParent}
+                options: {base: compPaths.srcRoot}
             },
             minifedFile: 'component.min.css',
-            dest: compPaths.dist
+            dest: compPaths.distRoot
         }
     };
 

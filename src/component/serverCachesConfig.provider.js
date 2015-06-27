@@ -2,34 +2,50 @@
     "use strict";
 
     angular.module("ccServerCachesModule")
-        .provider("ccServerCachesConfig", serverCachesConfig);
+        .provider("ccServerCachesConfig", serverCachesConfigProvider);
 
-    serverCachesConfig.$inject = [];
+    serverCachesConfigProvider.$inject = [];
 
-    function serverCachesConfig() {
+    function serverCachesConfigProvider() {
 
-        var currentConfig;
+        var customConfig;
 
-        function registerCurrentConfig(config) {
-            currentConfig = config;
+        /* jshint validthis:true */
+        this.$get = ServerCachesConfig;
+        this.registerConfig = registerConfig;
+
+        /////////////
+
+        function registerConfig(config) {
+            customConfig = config;
         }
 
-        function service($q, $window, utils) {
-            var defaultConfig = {
-                url: utils.combinePaths($window.location.pathname, "api/caches/")
-            };
+        ServerCachesConfig.$inject = ["$q", "$window", "_ccServerCachesUtils"];
 
-            return function() {
+        function ServerCachesConfig($q, $window, utils) {
+            var finalConfig;
+
+            init();
+
+            return fetchConfig;
+
+            /////////////
+
+            function fetchConfig() {
                 // defines an async api for returning configuration
                 // this is offers flexibility for our service can be replaced by a custom implementation that could be
                 // async
-                return $q.when(currentConfig || defaultConfig);
-            };
-        }
+                return $q.when(finalConfig);
+            }
 
-        return {
-            registerCurrentConfig: registerCurrentConfig,
-            $get: ["$q", "$window", "_ccServerCachesUtils", service]
-        };
+            function init(){
+                var defaultConfig = {
+                    url: utils.combinePaths($window.location.pathname, "api/caches/"),
+                    // note: this is a *logical* url that is acts as a reasonable guess at the actual url on the server
+                    cacheListTemplateUrl: "component/serverCachesList.html"
+                };
+                finalConfig = angular.extend({}, defaultConfig, customConfig);
+            }
+        }
     }
 })();
