@@ -10,6 +10,7 @@ module.exports = function (args) {
         distRoot: './dist.demo.{{env}}/',
         srcRoot: 'src/'
     };
+    var commonImageExts = "{svg,jpg,gif,png}";
 
     var appSrcFolder = 'demoApp/';
     var appPaths = _.extend({}, paths, {
@@ -48,17 +49,19 @@ module.exports = function (args) {
         },
         getOtherFiles: getAppOtherFiles,
         images: {
+            exts: commonImageExts,
             src: {
-                path: getImagePaths(appPaths.src),
+                path: appPaths.src + "**/*." + commonImageExts,
                 options: {base: appPaths.srcRoot}
             },
-            dest: appPaths.distRoot
+            dest: args.env === 'dev' ? appPaths.distRoot : appPaths.distRoot + appSrcFolder + "images"
         },
         partials: {
             src: {
                 path: [appPaths.src + '**/*.html'],
                 options: {base: appPaths.srcRoot}
             },
+            moduleName: 'shared',
             dest: appPaths.distRoot
         },
         scripts: {
@@ -67,6 +70,7 @@ module.exports = function (args) {
                 options: {base: appPaths.srcRoot}
             },
             minifedFile: 'app.min.js',
+            isCacheBusted: true,
             dest: args.env === 'dev' ? appPaths.distRoot : appPaths.distRoot + appSrcFolder
         },
         scriptsDevServer: {
@@ -79,14 +83,16 @@ module.exports = function (args) {
                 path: [appPaths.src + '**/*.css', appPaths.src + '**/*.scss'],
                 options: {base: appPaths.srcRoot}
             },
+            isCacheBusted: true,
             minifedFile: 'app.min.css',
             dest: args.env === 'dev' ? appPaths.distRoot : appPaths.distRoot + appSrcFolder
         }
     };
     appConfig = _.extend(appConfig, appPaths);
 
+    var compSrcFolder = 'component/';
     var compPaths = _.extend({}, paths, {
-        src: 'src/component/',
+        src: paths.srcRoot + compSrcFolder,
         distRoot: './dist.{{env}}/'
     });
     var compConfig = {
@@ -105,17 +111,19 @@ module.exports = function (args) {
             dest: compPaths.distRoot + bowerFolder
         },
         images: {
+            exts: commonImageExts,
             src: {
-                path: getImagePaths(compPaths.src),
+                path: compPaths.src + "**/*." + commonImageExts,
                 options: {base: compPaths.srcRoot}
             },
-            dest: compPaths.distRoot
+            dest: args.env === 'dev' ? compPaths.distRoot : compPaths.distRoot + compSrcFolder + "images"
         },
         partials: {
             src: {
                 path: [compPaths.src + '**/*.html'],
                 options: {base: compPaths.srcRoot}
             },
+            moduleName: 'ccServerCachesModule',
             dest: compPaths.distRoot
         },
         scripts: {
@@ -123,16 +131,18 @@ module.exports = function (args) {
                 path: compPaths.src + '**/*.js',
                 options: {base: compPaths.srcRoot}
             },
+            isCacheBusted: false,
             minifedFile: 'component.min.js',
-            dest: compPaths.distRoot
+            dest: args.env === 'dev' ? compPaths.distRoot : compPaths.distRoot + compSrcFolder
         },
         styles: {
             src: {
                 path: [compPaths.src + '**/*.css', compPaths.src + '**/*.scss'],
                 options: {base: compPaths.srcRoot}
             },
+            isCacheBusted: false,
             minifedFile: 'component.min.css',
-            dest: compPaths.distRoot
+            dest: args.env === 'dev' ? compPaths.distRoot : compPaths.distRoot + compSrcFolder
         }
     };
     compConfig = _.extend(compConfig, compPaths);
@@ -140,8 +150,7 @@ module.exports = function (args) {
 
     var config = {
         app: expandConfig(appConfig, args),
-        comp: expandConfig(compConfig, args),
-        getImagePaths: getImagePaths
+        comp: expandConfig(compConfig, args)
     };
 
 
@@ -150,7 +159,7 @@ module.exports = function (args) {
     ////////////////
 
     function expandConfig(obj, locals) {
-        if (_.isFunction(obj)) return obj;
+        if (_.isFunction(obj) || !(_.isString(obj) || _.isObject(obj) || _.isArray(obj))) return obj;
 
         if (_.isArray(obj)) {
             return _.map(obj, function (value) {
@@ -181,12 +190,5 @@ module.exports = function (args) {
         var bs = lib.ext(true).dev(true).join({font: ['eot', 'woff', 'woff2', 'ttf', 'svg']}).deps.bootstrap;
         return gulp.src(bs.font)
             .pipe(gulp.dest(config.app.rootDist + "fonts"));
-    }
-
-    function getImagePaths(baseDir, imageExts) {
-        imageExts = imageExts || ['svg', 'jpg', 'gif', 'png'];
-        return imageExts.map(function (ext) {
-            return baseDir + '**/*.' + ext;
-        });
     }
 };
