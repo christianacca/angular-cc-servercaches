@@ -3,7 +3,7 @@ var gulp = require('gulp');
 var plugins = require('gulp-load-plugins')();
 var del = require('del');
 var es = require('event-stream');
-var lib = require('bower-files')();
+var lib = require('bower-files');
 var path = require('path');
 var Q = require('q');
 var _ = require('lodash');
@@ -95,25 +95,31 @@ pipes.builtScriptsProd = function(scriptsConfig, partialsConfig) {
 pipes.builtAppScriptsProd = _.partial(pipes.builtScriptsProd, gc.app.scripts, gc.app.partials);
 
 pipes.builtVendorScriptsDev = function(config) {
-    return pipes.bowerFiles('js', config.filter)
+    return pipes.bowerFiles('js', config)
         .pipe(gulp.dest(config.dest));
 };
 
 // moves vendor scripts into the dev environment
-pipes.builtAppVendorScriptsDev = _.partial(pipes.builtVendorScriptsDev, gc.app.bowerComponents.scripts);
+pipes.builtAppVendorScriptsDev = _.partial(
+    pipes.builtVendorScriptsDev,
+    _.extend({}, gc.app.bowerComponents.scripts, { overrides: gc.app.bowerComponents.overrides })
+);
 
 pipes.builtVendorScriptsProd = function(config) {
     // todo: find a way to concatenate existing minified js that does not break sourcemap concept
     // ie combining all the minified files into one also includes sourceMapUrl for each js file - this
     // isn't supported by browsers
-    return pipes.bowerFiles('min.js')
+    return pipes.bowerFiles('min.js', config)
         .pipe(plugins.order(config.order))
         //.pipe(plugins.concat('bower_components.min.js'))
         .pipe(plugins.rev())
         .pipe(gulp.dest(config.dest));
 };
 
-pipes.builtAppVendorScriptsProd = _.partial(pipes.builtVendorScriptsProd, gc.app.bowerComponents.scripts);
+pipes.builtAppVendorScriptsProd = _.partial(
+    pipes.builtVendorScriptsProd,
+    _.extend({}, gc.app.bowerComponents.scripts, { overrides: gc.app.bowerComponents.overrides })
+);
 
 pipes.validatedDevServerScripts = function() {
     return gulp.src(gc.app.scriptsDevServer.src.path)
@@ -145,7 +151,7 @@ pipes.scriptedPartials = function(config) {
 pipes.scriptedAppPartials = _.partial(pipes.scriptedPartials, gc.app.partials);
 
 pipes.bowerFiles = function (ext, options) {
-    options = _.extend({}, { skipMissing: false, dev: true }, options);
+    var filter = _.extend({}, { skipMissing: false, dev: true }, options && options.filter);
 
     // note: we having to make up for the fact that bower does not have a mechanism to describe minified main and source
     // map files
@@ -167,16 +173,16 @@ pipes.bowerFiles = function (ext, options) {
     }
 
     var criteria = {
-        dev: options.dev,
+        dev: filter.dev,
         ext: typeExt
     };
-    var files = lib.filter(criteria).map(fileMapFn);
+    var files = lib({ overrides: options.overrides }).filter(criteria).map(fileMapFn);
     // not sure why gulp-expect-file cannot check files directly :-(
     var expectedFiles = files.map(function(filePath) {
         return '**/' + _.last(filePath.split('\\'));
     });
     var continuation = gulp.src(files);
-    if (!options.skipMissing) {
+    if (!filter.skipMissing) {
         continuation = continuation
             .pipe(plugins.expectFile({ checkRealFile: true, reportMissing: true }, expectedFiles));
     }
@@ -207,33 +213,40 @@ pipes.builtAppStylesProd = function() {
 };
 
 pipes.builtVendorStylesDev = function(config) {
-    return pipes.bowerFiles('css', config.filter)
+    return pipes.bowerFiles('css', config)
         .pipe(gulp.dest(config.dest));
 };
 
-pipes.builtAppVendorStylesDev = _.partial(pipes.builtVendorStylesDev, gc.app.bowerComponents.styles);
+pipes.builtAppVendorStylesDev = _.partial(
+    pipes.builtVendorStylesDev,
+    _.extend({}, gc.app.bowerComponents.styles, { overrides: gc.app.bowerComponents.overrides }));
 
 pipes.builtVendorStylesProd = function(config) {
     // todo: find a way to concatenate existing minified css that does not break sourcemap concept
     // ie combining all the minified files into one also includes sourceMapUrl for each css file - this
     // isn't supported by browsers
-    return pipes.bowerFiles('min.css', config.filter)
+    return pipes.bowerFiles('min.css', config)
         .pipe(plugins.order(config.order))
         //.pipe(plugins.concat('bower_components.min.css'))
         .pipe(plugins.rev())
         .pipe(gulp.dest(config.dest));
 };
 
-pipes.builtAppVendorStylesProd = _.partial(pipes.builtVendorStylesProd, gc.app.bowerComponents.styles);
+pipes.builtAppVendorStylesProd = _.partial(
+    pipes.builtVendorStylesProd,
+    _.extend({}, gc.app.bowerComponents.styles, { overrides: gc.app.bowerComponents.overrides })
+);
 
 pipes.vendorScriptSrcMapsProd = function() {
 
     // we need to return the source files as source maps reference them
     // todo: some source maps will inline the source code, for these we don't need to return the source file
-    var sourceScripts = pipes.bowerFiles('js')
+    var sourceScripts = pipes.bowerFiles('js', gc.app.bowerComponents.scripts)
         .pipe(gulp.dest(gc.app.bowerComponents.dest));
 
-    var sourceMaps = pipes.bowerFiles('min.js.map', { skipMissing: true })
+    var srcMapOptions = _.extend({}, gc.app.bowerComponents.scripts, {overrides: gc.app.bowerComponents.overrides});
+    srcMapOptions.filter = _.extend({}, srcMapOptions.filter, { skipMissing: true });
+    var sourceMaps = pipes.bowerFiles('min.js.map', srcMapOptions)
         .pipe(gulp.dest(gc.app.bowerComponents.dest));
 
     return es.merge(sourceScripts, sourceMaps);
@@ -274,7 +287,7 @@ pipes.builtIndex = function(streams) {
 pipes.builtIndexDev = function() {
 
     var streams = {
-        vendorScripts: pipes.builtVendorScriptsDev(gc.app.bowerComponents.scripts)
+        vendorScripts: pipes.builtAppVendorScriptsDev()
             .pipe(plugins.order(gc.app.bowerComponents.scripts.order)),
         compScripts: pipes.compFiles("js").pipe(plugins.angularFilesort()),
         appScripts: pipes.builtAppScriptsDev().pipe(plugins.angularFilesort()),
@@ -302,11 +315,33 @@ pipes.builtIndexProd = function() {
         .pipe(gulp.dest(gc.app.rootDist)));
 };
 
+
+pipes.builtOtherFiles = function(getterFn) {
+    if (!getterFn) return null;
+
+    var locals = {
+        pipes: pipes,
+        plugins: plugins,
+        gulp: gulp,
+        lib: lib
+    };
+    return getterFn(locals);
+};
+
+pipes.builtAppVendorOtherFiles = _.partial(pipes.builtOtherFiles, gc.app.bowerComponents.getOtherFiles);
+pipes.builtAppOtherFiles = _.partial(pipes.builtOtherFiles, gc.app.getOtherFiles);
+
 pipes.builtAppDev = function() {
     // todo: consider a builtVendorPartials that will copy html templates
-    return es.merge(
-        pipes.builtIndexDev(), pipes.builtAppPartials(), pipes.compFiles("html"), pipes.processedAppImagesDev()
-    );
+    var streams = [
+        pipes.builtIndexDev(),
+        pipes.builtAppPartials(),
+        pipes.compFiles("html"),
+        pipes.processedAppImagesDev(),
+        pipes.builtAppVendorOtherFiles(),
+        pipes.builtAppOtherFiles()
+    ];
+    return es.merge(_.compact(streams));
 };
 
 pipes.builtAppProd = function() {
@@ -449,6 +484,7 @@ pipes.builtCompScriptsDev = _.partial(pipes.builtScriptsDev, gc.comp.scripts);
 pipes.builtCompPartials = _.partial(pipes.builtPartials, gc.comp.partials);
 pipes.builtCompStylesDev = _.partial(pipes.builtStylesDev, gc.comp.styles);
 pipes.processedCompImagesDev = _.partial(pipes.processedImagesDev, gc.comp.images);
+pipes.builtCompOtherFiles = _.partial(pipes.builtOtherFiles, gc.comp.getOtherFiles);
 
 pipes.compFiles = function(ext){
     return gulp.src(gc.comp.rootDist + "**/*." + ext)
@@ -457,13 +493,15 @@ pipes.compFiles = function(ext){
 
 pipes.builtCompDev = function () {
 
-    var scripts = pipes.builtCompScriptsDev();
-    var styles = pipes.builtCompStylesDev();
+    var streams = [
+        pipes.builtCompScriptsDev(),
+        pipes.builtCompStylesDev(),
+        pipes.builtCompPartials(),
+        pipes.processedCompImagesDev(),
+        pipes.builtCompOtherFiles()
+    ];
 
-    var partials = pipes.builtCompPartials();
-    var images = pipes.processedCompImagesDev();
-
-    return es.merge(scripts, styles, partials, images);
+    return es.merge(_.compact(streams));
 };
 
 gulp.task('build-comp-dev', pipes.builtCompDev);

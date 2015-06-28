@@ -10,7 +10,8 @@
     "angular-animate": "v1.4.x",
     "angular-aria": "^1.4.x",
     "angular-material": "~0.9.4",
-    "angular-route": "~1.4.x"
+    "angular-route": "~1.4.x",
+    "bootstrap": "~3.3.5"
   },
   "dependencies": {
     "angular": "^1.4.x"

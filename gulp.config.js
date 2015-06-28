@@ -20,6 +20,20 @@ module.exports = function (args) {
     var appConfig = {
         rootDist: appPaths.distRoot,
         bowerComponents: {
+            getOtherFiles: getVendorOtherFiles,
+            overrides: {
+                bootstrap: {
+                    main: [
+                        "dist/css/bootstrap.css",
+                        "dist/js/bootstrap.js",
+                        "dist/fonts/glyphicons-halflings-regular.eot",
+                        "dist/fonts/glyphicons-halflings-regular.svg",
+                        "dist/fonts/glyphicons-halflings-regular.ttf",
+                        "dist/fonts/glyphicons-halflings-regular.woff",
+                        "dist/fonts/glyphicons-halflings-regular.woff2"
+                    ]
+                }
+            },
             scripts: {
                 dest: appPaths.distRoot + bowerFolder,
                 filter: null,
@@ -28,10 +42,11 @@ module.exports = function (args) {
             styles: {
                 dest: appPaths.distRoot + bowerFolder,
                 filter: null,
-                order: []
+                order: ['bootstrap.*']
             },
             dest: appPaths.distRoot + bowerFolder
         },
+        getOtherFiles: getAppOtherFiles,
         images: {
             src: {
                 path: getImagePaths(appPaths.src),
@@ -68,6 +83,7 @@ module.exports = function (args) {
             dest: args.env === 'dev' ? appPaths.distRoot : appPaths.distRoot + appSrcFolder
         }
     };
+    appConfig = _.extend(appConfig, appPaths);
 
     var compPaths = _.extend({}, paths, {
         src: 'src/component/',
@@ -119,6 +135,7 @@ module.exports = function (args) {
             dest: compPaths.distRoot
         }
     };
+    compConfig = _.extend(compConfig, compPaths);
 
 
     var config = {
@@ -133,6 +150,8 @@ module.exports = function (args) {
     ////////////////
 
     function expandConfig(obj, locals) {
+        if (_.isFunction(obj)) return obj;
+
         if (_.isArray(obj)) {
             return _.map(obj, function (value) {
                 return expandConfig(value, locals);
@@ -145,6 +164,23 @@ module.exports = function (args) {
                 return prev;
             }, {});
         }
+    }
+
+    function getAppOtherFiles(locals){
+        var gulp = locals.gulp;
+        var files = [
+            config.app.srcRoot + "Web.config"
+        ];
+        return gulp.src(files)
+            .pipe(gulp.dest(config.app.rootDist));
+    }
+
+    function getVendorOtherFiles(locals){
+        var gulp = locals.gulp;
+        var lib = locals.lib({ overrides: config.app.bowerComponents.overrides});
+        var bs = lib.ext(true).dev(true).join({font: ['eot', 'woff', 'woff2', 'ttf', 'svg']}).deps.bootstrap;
+        return gulp.src(bs.font)
+            .pipe(gulp.dest(config.app.rootDist + "fonts"));
     }
 
     function getImagePaths(baseDir, imageExts) {

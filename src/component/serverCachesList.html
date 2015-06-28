@@ -26,16 +26,20 @@
                         class="btn-sm btn-warning"
                         ng-if="cache.isPausable && !cache.isPaused"
                         ng-disabled="isDisabled()"
-                        ram-pause-icon-btn="pauseCache(cache)"></button>
+                        ng-click="pauseCache(cache)">
+                    <i class="glyphicon glyphicon-pause"></i>
+                </button>
                 <button title="Starts the cache - new items will be cached and existing cached items before the cache was paused will now be served by the cache"
                         name="startCache"
                         class="btn-sm btn-success"
                         ng-if="cache.isPausable && cache.isPaused"
                         ng-disabled="isDisabled()"
-                        ram-start-icon-btn="startCache(cache)"></button>
+                        ng-click="startCache(cache)">
+                    <i class="glyphicon glyphicon-play"></i>
+                </button>
                 <button title="Open/Close list" name="listToggle" class="btn btn-link btn-sm" ng-click="toggleList(cache)">
-                    <i class="glyphicon ram-btn-link-icon" ng-class="{ 'glyphicon-chevron-down': !isSelected(cache), 'glyphicon-chevron-up': isSelected(cache)}"></i> 
-                    <span title="Cached item count" ram-std-record-count>{{cache.itemCount}}</span>
+                    <i class="glyphicon" ng-class="{ 'glyphicon-chevron-down': !isSelected(cache), 'glyphicon-chevron-up': isSelected(cache)}"></i>
+                    <span title="Cached item count" class="badge">{{cache.itemCount}}</span>
                 </button>
             </td>
         </tr>
@@ -63,7 +67,9 @@
                                         name="removeItem"
                                         ng-disabled="cache.isPaused || isDisabled()"
                                         class="btn btn-sm btn-danger"
-                                        ng-click="removeItem(cache, itemStat)"></button>
+                                        ng-click="removeItem(cache, itemStat)">
+                                    <i class="glyphicon glyphicon-trash"></i>
+                                </button>
 
                             </td>
                         </tr>
