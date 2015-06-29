@@ -23,16 +23,17 @@ module.exports = function (args) {
         bowerComponents: {
             getOtherFiles: getVendorOtherFiles,
             overrides: {
+                // only want css and fonts from bs
                 bootstrap: {
                     main: [
                         "dist/css/bootstrap.css",
-                        "dist/js/bootstrap.js",
                         "dist/fonts/glyphicons-halflings-regular.eot",
                         "dist/fonts/glyphicons-halflings-regular.svg",
                         "dist/fonts/glyphicons-halflings-regular.ttf",
                         "dist/fonts/glyphicons-halflings-regular.woff",
                         "dist/fonts/glyphicons-halflings-regular.woff2"
-                    ]
+                    ],
+                    dependencies: {}
                 }
             },
             scripts: {
@@ -69,8 +70,9 @@ module.exports = function (args) {
                 path: appPaths.src + '**/*.js',
                 options: {base: appPaths.srcRoot}
             },
-            minifedFile: 'app.min.js',
+            outputFile: 'app.js',
             isCacheBusted: true,
+            isConcatFileOutput: false,
             dest: args.env === 'dev' ? appPaths.distRoot : appPaths.distRoot + appSrcFolder
         },
         scriptsDevServer: {
@@ -84,7 +86,8 @@ module.exports = function (args) {
                 options: {base: appPaths.srcRoot}
             },
             isCacheBusted: true,
-            minifedFile: 'app.min.css',
+            isConcatFileOutput: false,
+            outputFile: 'app.css',
             dest: args.env === 'dev' ? appPaths.distRoot : appPaths.distRoot + appSrcFolder
         }
     };
@@ -132,7 +135,8 @@ module.exports = function (args) {
                 options: {base: compPaths.srcRoot}
             },
             isCacheBusted: false,
-            minifedFile: 'component.min.js',
+            isConcatFileOutput: true,
+            outputFile: 'component.js',
             dest: args.env === 'dev' ? compPaths.distRoot : compPaths.distRoot + compSrcFolder
         },
         styles: {
@@ -141,7 +145,8 @@ module.exports = function (args) {
                 options: {base: compPaths.srcRoot}
             },
             isCacheBusted: false,
-            minifedFile: 'component.min.css',
+            isConcatFileOutput: true,
+            outputFile: 'component.css',
             dest: args.env === 'dev' ? compPaths.distRoot : compPaths.distRoot + compSrcFolder
         }
     };
