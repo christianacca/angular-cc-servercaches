@@ -21,6 +21,7 @@ module.exports = function (args) {
     var appConfig = {
         rootDist: appPaths.distRoot,
         bowerComponents: {
+            builtOtherFiles: builtVendorOtherFiles,
             getOtherFiles: getVendorOtherFiles,
             overrides: {
                 // only want css and fonts from bs
@@ -48,6 +49,7 @@ module.exports = function (args) {
             },
             dest: appPaths.distRoot + bowerFolder
         },
+        builtOtherFiles: builtAppOtherFiles,
         getOtherFiles: getAppOtherFiles,
         images: {
             exts: commonImageExts,
@@ -57,6 +59,7 @@ module.exports = function (args) {
             },
             dest: args.env === 'dev' ? appPaths.distRoot : appPaths.distRoot + appSrcFolder + "images"
         },
+        indexPage: paths.srcRoot + 'index.html',
         partials: {
             src: {
                 path: [appPaths.src + '**/*.html'],
@@ -136,7 +139,7 @@ module.exports = function (args) {
             },
             isCacheBusted: false,
             isConcatFileOutput: true,
-            outputFile: 'component.js',
+            outputFile: 'angular-cc-servercaches.js',
             dest: args.env === 'dev' ? compPaths.distRoot : compPaths.distRoot + compSrcFolder
         },
         styles: {
@@ -146,7 +149,7 @@ module.exports = function (args) {
             },
             isCacheBusted: false,
             isConcatFileOutput: true,
-            outputFile: 'component.css',
+            outputFile: 'angular-cc-servercaches.css',
             dest: args.env === 'dev' ? compPaths.distRoot : compPaths.distRoot + compSrcFolder
         }
     };
@@ -180,20 +183,30 @@ module.exports = function (args) {
         }
     }
 
-    function getAppOtherFiles(locals){
-        var gulp = locals.gulp;
-        var files = [
+    function getAppOtherFiles(/*locals*/){
+        return [
             config.app.srcRoot + "Web.config"
         ];
-        return gulp.src(files)
-            .pipe(gulp.dest(config.app.rootDist));
     }
 
-    function getVendorOtherFiles(locals){
-        var gulp = locals.gulp;
-        var lib = locals.lib({ overrides: config.app.bowerComponents.overrides});
-        var bs = lib.ext(true).dev(true).join({font: ['eot', 'woff', 'woff2', 'ttf', 'svg']}).deps.bootstrap;
-        return gulp.src(bs.font)
-            .pipe(gulp.dest(config.app.rootDist + "fonts"));
+    function builtAppOtherFiles(locals){
+        var files = getAppOtherFiles(locals);
+        return locals.gulp.src(files)
+            .pipe(locals.gulp.dest(config.app.rootDist));
+    }
+
+    function getVendorOtherFiles(locals) {
+        var files = locals.lib({overrides: config.app.bowerComponents.overrides})
+            .ext(true)
+            .dev(true)
+            .join({font: ['eot', 'woff', 'woff2', 'ttf', 'svg']})
+            .deps.bootstrap.font;
+        return files;
+    }
+
+    function builtVendorOtherFiles(locals){
+        var files = getVendorOtherFiles(locals);
+        return locals.gulp.src(files)
+            .pipe(locals.gulp.dest(config.app.rootDist + "fonts"));
     }
 };

@@ -14,7 +14,9 @@
         //////////////
 
         function init(){
-            self.model = {};
+            self.model = {
+                title: "Server-side cache manager"
+            };
             return refreshCaches();
         }
 

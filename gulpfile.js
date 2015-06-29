@@ -15,17 +15,9 @@ var _ = require('lodash');
  * --env  : The environment name to build for; defaults to 'dev'.
  */
 
-args.env = args.env || 'prod';
+args.env = args.env || 'dev';
+var isDev = args.env === 'dev';
 var gc = require('./gulp.config')(args);
-
-// == PATH STRINGS ========
-
-var paths = {
-    images: ['./src/demoApp/**/*.svg', './src/demoApp/**/*.jpg', './src/demoApp/**/*.gif', './src/demoApp/**/*.png'],
-    index: './src/index.html',
-    distProd: './dist.prod/',
-    scriptsDevServer: 'devServer/**/*.js'
-};
 
 // == PIPE SEGMENTS ========
 
@@ -51,11 +43,14 @@ pipes.minifiedFileName = function() {
 };
 
 pipes.validatedScripts = function(config) {
+    return pipes.processedScripts(config)
+        .pipe(plugins.jshint())
+        .pipe(plugins.jshint.reporter('jshint-stylish', {verbose: true}));
+};
+pipes.processedScripts = function(config) {
     plugins.nunjucksRender.nunjucks.configure({ watch: false });
     var jsTplFilter = plugins.filter('**/*.tpl.js');
     return gulp.src(config.src.path, config.src.options)
-        .pipe(plugins.jshint())
-        .pipe(plugins.jshint.reporter('jshint-stylish', {verbose: true}))
         .pipe(jsTplFilter)
             .pipe(plugins.data(function(f){
                 var tplData = require(path.dirname(f.path) + '\\' + path.basename(f.path, '.js') + '.json');
@@ -76,6 +71,7 @@ pipes.builtScriptsDev = function(config) {
         .pipe(gulp.dest(config.dest));
 };
 
+// moves app scripts into the dev environment
 pipes.builtAppScriptsDev = _.partial(pipes.builtScriptsDev, gc.app.scripts);
 
 pipes.builtScriptsProd = function(scriptsConfig, partialsConfig) {
@@ -94,6 +90,7 @@ pipes.builtScriptsProd = function(scriptsConfig, partialsConfig) {
         .pipe(gulp.dest(scriptsConfig.dest));
 };
 
+// concatenates, uglifies, and moves app scripts and partials into the prod environment
 pipes.builtAppScriptsProd = _.partial(pipes.builtScriptsProd, gc.app.scripts, gc.app.partials);
 
 // moves vendor scripts into the dev environment
@@ -108,13 +105,14 @@ pipes.appCompScriptsDev = function(){
         .pipe(gulp.dest(gc.app.rootDist));
 };
 
+// moves minified vendor scripts into the production environment
 pipes.appVendorScriptsProd = function(){
     var config = _.extend({}, gc.app.bowerComponents.scripts, { overrides: gc.app.bowerComponents.overrides });
     // todo: find a way to concatenate existing minified js that does not break sourcemap concept
     // ie combining all the minified files into one also includes sourceMapUrl for each js file - this
     // isn't supported by browsers
     return pipes.bowerFiles('min.js', config)
-        .pipe(plugins.order(config.order))
+        //.pipe(plugins.order(config.order))
         //.pipe(plugins.concat('bower_components.min.js'))
         .pipe(plugins.rev())
         .pipe(gulp.dest(config.dest));
@@ -143,6 +141,7 @@ pipes.builtPartials = function(config) {
         .pipe(gulp.dest(config.dest));
 };
 
+// moves app html source files into the dev environment
 pipes.builtAppPartials = _.partial(pipes.builtPartials, gc.app.partials);
 
 pipes.scriptedPartials = function(config) {
@@ -210,6 +209,7 @@ pipes.builtStylesDev = function(config) {
         .pipe(gulp.dest(config.dest));
 };
 
+// compiles app sass and moves to the dev environment
 pipes.builtAppStylesDev = _.partial(pipes.builtStylesDev, gc.app.styles);
 
 pipes.builtStylesProd = function(config) {
@@ -225,6 +225,7 @@ pipes.builtStylesProd = function(config) {
         .pipe(gulp.dest(config.dest));
 };
 
+// compiles and minifies app sass to css and moves to the prod environment
 pipes.builtAppStylesProd = _.partial(pipes.builtStylesProd, gc.app.styles);
 
 pipes.appVendorStylesDev = function(){
@@ -301,13 +302,16 @@ pipes.processedImagesProd = function(config) {
         .pipe(gulp.dest(config.dest));
 };
 
+pipes.processedAppImagesProd = _.partial(pipes.processedImagesProd, gc.app.images);
+
+// checks index.html for syntax errors
 pipes.validatedIndex = function() {
-    return gulp.src(paths.index)
+    return gulp.src(gc.app.indexPage)
         .pipe(plugins.htmlhint())
         .pipe(plugins.htmlhint.reporter());
 };
 
-pipes.builtIndex = function(streams) {
+pipes.buildIndex = function(streams) {
     return pipes.validatedIndex()
         .pipe(gulp.dest(gc.app.rootDist)) // write first to get relative path for inject
         .pipe(plugins.inject(streams.vendorScripts, {relative: true, name: 'bower'}))
@@ -333,10 +337,11 @@ pipes.builtIndexDev = function() {
         appStyles: pipes.builtAppStylesDev()
     };
 
-    return pipes.builtIndex(streams)
+    return pipes.buildIndex(streams)
         .pipe(gulp.dest(gc.app.rootDist));
 };
 
+// validates and injects sources into index.html, minifies and moves it to the prod environment
 pipes.builtIndexProd = function() {
 
     var streams = {
@@ -348,26 +353,30 @@ pipes.builtIndexProd = function() {
         vendorStyles: pipes.appVendorStylesProd()
     };
 
-    return pipes.builtIndex(streams)
+    return pipes.buildIndex(streams)
         .pipe(plugins.htmlmin({collapseWhitespace: true, removeComments: true})
         .pipe(gulp.dest(gc.app.rootDist)));
 };
 
-
-pipes.builtOtherFiles = function(getterFn) {
-    if (!getterFn) return null;
-
+function getLocals() {
     var locals = {
         pipes: pipes,
         plugins: plugins,
         gulp: gulp,
         lib: lib
     };
-    return getterFn(locals);
+    return locals;
+}
+
+pipes.buildOtherFiles = function(buildFn) {
+    if (!buildFn) return null;
+
+    var locals = getLocals();
+    return buildFn(locals);
 };
 
-pipes.appVendorOtherFiles = _.partial(pipes.builtOtherFiles, gc.app.bowerComponents.getOtherFiles);
-pipes.builtAppOtherFiles = _.partial(pipes.builtOtherFiles, gc.app.getOtherFiles);
+pipes.appVendorOtherFiles = _.partial(pipes.buildOtherFiles, gc.app.bowerComponents.builtOtherFiles);
+pipes.builtAppOtherFiles = _.partial(pipes.buildOtherFiles, gc.app.builtOtherFiles);
 
 pipes.builtAppDev = function() {
     // todo: consider a builtVendorPartials that will copy html templates
@@ -391,7 +400,7 @@ pipes.builtAppProd = function() {
         pipes.vendorSrcMapsProd(),
         pipes.compFiles("map").pipe(gulp.dest(gc.app.rootDist)),
         pipes.compFiles(gc.comp.images.exts).pipe(gulp.dest(gc.app.rootDist)),
-        pipes.processedImagesProd(gc.app.images),
+        pipes.processedAppImagesProd(),
         pipes.appVendorOtherFiles(),
         pipes.builtCompOtherFiles(),
         pipes.builtAppOtherFiles()
@@ -399,52 +408,27 @@ pipes.builtAppProd = function() {
     return es.merge(_.compact(streams));
 };
 
+pipes.builtApp = isDev ? pipes.builtAppDev : pipes.builtAppProd;
+
 // == TASKS ========
 
 // removes all compiled dev files
-gulp.task('clean-app', _.partial(pipes.cleanTaskImpl, gc.app.rootDist));
-
-// checks index.html for syntax errors
-gulp.task('validate-index', pipes.validatedIndex);
-
-// moves html source files into the dev environment
-gulp.task('build-partials-dev', pipes.builtAppPartials);
+gulp.task('app-clean', _.partial(pipes.cleanTaskImpl, gc.app.rootDist));
 
 // runs jshint on the dev server scripts
 gulp.task('validate-devserver-scripts', pipes.validatedDevServerScripts);
 
-// moves app scripts into the dev environment
-gulp.task('build-app-scripts-dev', pipes.builtAppScriptsDev);
+// runs jshint on the app scripts
+gulp.task('app-validate-scripts', pipes.validatedAppScripts);
 
-// concatenates, uglifies, and moves app scripts and partials into the prod environment
-gulp.task('build-app-scripts-prod', pipes.builtAppScriptsProd);
+// builds a complete environment
+gulp.task('app-build', pipes.builtApp);
 
-// compiles app sass and moves to the dev environment
-gulp.task('build-styles-dev', pipes.builtAppStylesDev);
+// cleans and builds a complete environment
+gulp.task('app-clean-build', ['app-clean'], pipes.builtApp);
 
-// compiles and minifies app sass to css and moves to the prod environment
-gulp.task('build-styles-prod', pipes.builtAppStylesProd);
-
-// concatenates, uglifies, and moves vendor scripts into the prod environment
-gulp.task('build-vendor-scripts-prod', pipes.appVendorScriptsProd);
-
-// validates and injects sources into index.html, minifies and moves it to the dev environment
-gulp.task('build-index-prod', pipes.builtIndexProd);
-
-// builds a complete dev environment
-gulp.task('build-app-dev', pipes.builtAppDev);
-
-// builds a complete prod environment
-gulp.task('build-app-prod', pipes.builtAppProd);
-
-// cleans and builds a complete dev environment
-gulp.task('clean-build-app-dev', ['clean-app'], pipes.builtAppDev);
-
-// cleans and builds a complete prod environment
-gulp.task('clean-build-app-prod', ['clean-app'], pipes.builtAppProd);
-
-// clean, build, and watch live changes to the dev environment
-gulp.task('watch-dev', ['clean-build-app-dev', 'validate-devserver-scripts'], function() {
+// clean, build, and watch live changes
+gulp.task('app-watch', ['app-clean-build', 'validate-devserver-scripts'], function() {
 
     // start nodemon to auto-reload the dev server
     plugins.nodemon({ script: 'server.js', ext: 'js', watch: ['devServer/'], env: {NODE_ENV : 'development'} })
@@ -453,76 +437,27 @@ gulp.task('watch-dev', ['clean-build-app-dev', 'validate-devserver-scripts'], fu
             console.log('[nodemon] restarted dev server');
         });
 
-    // start live-reload server
-    plugins.livereload.listen({ start: true });
-
-    // watch index
-    gulp.watch(paths.index, function() {
-        return pipes.builtIndexDev()
-            .pipe(plugins.livereload());
-    });
-
-    // watch app scripts
-    gulp.watch(gc.app.scripts.src.path, function() {
-        return pipes.builtAppScriptsDev()
-            .pipe(plugins.livereload());
-    });
+    // rebuild scripts, etc and inject them into index page
+    var builtIndex = isDev ? pipes.builtIndexDev : pipes.builtIndexProd;
+    gulp.watch([gc.app.indexPage, gc.app.scripts.src.path, gc.app.styles.src.path], builtIndex);
 
     // watch html partials
-    gulp.watch(gc.app.partials.src.path, function() {
-        return pipes.builtAppPartials()
-            .pipe(plugins.livereload());
-    });
+    var onPartialsChanged = isDev ? pipes.builtAppPartials : pipes.builtIndexDev;
+    gulp.watch(gc.app.partials.src.path, onPartialsChanged);
 
-    // watch styles
-    gulp.watch(gc.app.styles.src.path, function() {
-        return pipes.builtAppStylesDev()
-            .pipe(plugins.livereload());
-    });
+    // watch images
+    var processedImages = isDev ? pipes.processedAppImagesDev : pipes.processedAppImagesProd;
+    gulp.watch(gc.app.images.src.path, processedImages);
 
-});
-
-// clean, build, and watch live changes to the prod environment
-gulp.task('watch-prod', ['clean-build-app-prod', 'validate-devserver-scripts'], function() {
-
-    // start nodemon to auto-reload the dev server
-    plugins.nodemon({ script: 'server.js', ext: 'js', watch: ['devServer/'], env: {NODE_ENV : 'production'} })
-        .on('change', ['validate-devserver-scripts'])
-        .on('restart', function () {
-            console.log('[nodemon] restarted dev server');
-        });
-
-    // start live-reload server
-    plugins.livereload.listen({start: true});
-
-    // watch index
-    gulp.watch(paths.index, function() {
-        return pipes.builtIndexProd()
-            .pipe(plugins.livereload());
-    });
-
-    // watch app scripts
-    gulp.watch(gc.app.scripts.src.path, function() {
-        return pipes.builtAppScriptsProd()
-            .pipe(plugins.livereload());
-    });
-
-    // watch hhtml partials
-    gulp.watch(gc.app.partials.src.path, function() {
-        return pipes.builtAppScriptsProd()
-            .pipe(plugins.livereload());
-    });
-
-    // watch styles
-    gulp.watch(gc.app.styles.src.path, function() {
-        return pipes.builtAppStylesProd()
-            .pipe(plugins.livereload());
-    });
+    // watch other files
+    if (gc.app.getOtherFiles) {
+        gulp.watch(gc.app.getOtherFiles(), pipes.builtAppOtherFiles);
+    }
 
 });
 
-// default task builds for prod
-gulp.task('default', ['clean-build-app-prod']);
+// default task builds for dev
+gulp.task('default', ['app-clean-build']);
 
 
 /* Component build */
@@ -531,7 +466,7 @@ pipes.builtCompScriptsDev = _.partial(pipes.builtScriptsDev, gc.comp.scripts);
 pipes.builtCompPartials = _.partial(pipes.builtPartials, gc.comp.partials);
 pipes.builtCompStylesDev = _.partial(pipes.builtStylesDev, gc.comp.styles);
 pipes.processedCompImagesDev = _.partial(pipes.processedImagesDev, gc.comp.images);
-pipes.builtCompOtherFiles = _.partial(pipes.builtOtherFiles, gc.comp.getOtherFiles);
+pipes.builtCompOtherFiles = _.partial(pipes.buildOtherFiles, gc.comp.builtOtherFiles);
 
 pipes.builtCompDev = function () {
 
@@ -560,9 +495,9 @@ pipes.builtCompProd = function () {
 
     return es.merge(_.compact(streams));
 };
+pipes.builtComp = isDev ? pipes.builtCompDev : pipes.builtCompProd;
 
-gulp.task('clean-comp', _.partial(pipes.cleanTaskImpl, gc.comp.rootDist));
-gulp.task('build-comp-dev', pipes.builtCompDev);
-gulp.task('build-comp-prod', pipes.builtCompProd);
-gulp.task('clean-build-comp-dev', ['clean-comp'], pipes.builtCompDev);
-gulp.task('clean-build-comp-prod', ['clean-comp'], pipes.builtCompProd);
+
+gulp.task('comp-clean', _.partial(pipes.cleanTaskImpl, gc.comp.rootDist));
+gulp.task('comp-build', pipes.builtComp);
+gulp.task('comp-clean-build', ['comp-clean'], pipes.builtComp);
