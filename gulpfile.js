@@ -102,7 +102,7 @@ pipes.appVendorScriptsDev = function(){
 
 pipes.appCompScriptsDev = function(){
     return pipes.compFiles("js")
-        .pipe(gulp.dest(gc.app.rootDist));
+        .pipe(gulp.dest(gc.app.distRoot));
 };
 
 // moves minified vendor scripts into the production environment
@@ -121,7 +121,7 @@ pipes.appVendorScriptsProd = function(){
 pipes.appCompScriptsProd = function(){
     return pipes.compFiles("min.js")
         .pipe(plugins.rev())
-        .pipe(gulp.dest(gc.app.rootDist));
+        .pipe(gulp.dest(gc.app.distRoot));
 };
 
 pipes.validatedDevServerScripts = function() {
@@ -200,7 +200,7 @@ pipes.bowerFiles = function (ext, options) {
 };
 
 pipes.compFiles = function(ext){
-    return gulp.src(gc.comp.rootDist + "**/*." + ext);
+    return gulp.src(gc.comp.distRoot + "**/*." + ext);
 };
 
 pipes.builtStylesDev = function(config) {
@@ -236,7 +236,7 @@ pipes.appVendorStylesDev = function(){
 
 pipes.appCompStylesDev = function(){
     return pipes.compFiles("css")
-        .pipe(gulp.dest(gc.app.rootDist));
+        .pipe(gulp.dest(gc.app.distRoot));
 };
 
 pipes.appVendorStylesProd = function(){
@@ -254,7 +254,7 @@ pipes.appVendorStylesProd = function(){
 pipes.appCompStylesProd = function(){
     return pipes.compFiles("min.css")
         .pipe(plugins.rev())
-        .pipe(gulp.dest(gc.app.rootDist));
+        .pipe(gulp.dest(gc.app.distRoot));
 };
 
 pipes.vendorSrcMapsDev = function() {
@@ -313,7 +313,7 @@ pipes.validatedIndex = function() {
 
 pipes.buildIndex = function(streams) {
     return pipes.validatedIndex()
-        .pipe(gulp.dest(gc.app.rootDist)) // write first to get relative path for inject
+        .pipe(gulp.dest(gc.app.distRoot)) // write first to get relative path for inject
         .pipe(plugins.inject(streams.vendorScripts, {relative: true, name: 'bower'}))
         .pipe(plugins.inject(streams.compScripts, {relative: true, name: 'component'}))
         .pipe(plugins.inject(streams.appScripts, {relative: true}))
@@ -338,7 +338,7 @@ pipes.builtIndexDev = function() {
     };
 
     return pipes.buildIndex(streams)
-        .pipe(gulp.dest(gc.app.rootDist));
+        .pipe(gulp.dest(gc.app.distRoot));
 };
 
 // validates and injects sources into index.html, minifies and moves it to the prod environment
@@ -355,7 +355,7 @@ pipes.builtIndexProd = function() {
 
     return pipes.buildIndex(streams)
         .pipe(plugins.htmlmin({collapseWhitespace: true, removeComments: true})
-        .pipe(gulp.dest(gc.app.rootDist)));
+        .pipe(gulp.dest(gc.app.distRoot)));
 };
 
 function getLocals() {
@@ -384,8 +384,8 @@ pipes.builtAppDev = function() {
         pipes.builtIndexDev(),
         pipes.vendorSrcMapsDev(),
         pipes.builtAppPartials(),
-        pipes.compFiles("html").pipe(gulp.dest(gc.app.rootDist)),
-        pipes.compFiles(gc.comp.images.exts).pipe(gulp.dest(gc.app.rootDist)),
+        pipes.compFiles("html").pipe(gulp.dest(gc.app.distRoot)),
+        pipes.compFiles(gc.comp.images.exts).pipe(gulp.dest(gc.app.distRoot)),
         pipes.processedAppImagesDev(),
         pipes.appVendorOtherFiles(),
         pipes.builtCompOtherFiles(),
@@ -398,8 +398,8 @@ pipes.builtAppProd = function() {
     var streams = [
         pipes.builtIndexProd(),
         pipes.vendorSrcMapsProd(),
-        pipes.compFiles("map").pipe(gulp.dest(gc.app.rootDist)),
-        pipes.compFiles(gc.comp.images.exts).pipe(gulp.dest(gc.app.rootDist)),
+        pipes.compFiles("map").pipe(gulp.dest(gc.app.distRoot)),
+        pipes.compFiles(gc.comp.images.exts).pipe(gulp.dest(gc.app.distRoot)),
         pipes.processedAppImagesProd(),
         pipes.appVendorOtherFiles(),
         pipes.builtCompOtherFiles(),
@@ -413,7 +413,7 @@ pipes.builtApp = isDev ? pipes.builtAppDev : pipes.builtAppProd;
 // == TASKS ========
 
 // removes all compiled dev files
-gulp.task('app-clean', _.partial(pipes.cleanTaskImpl, gc.app.rootDist));
+gulp.task('app-clean', _.partial(pipes.cleanTaskImpl, gc.app.distRoot));
 
 // runs jshint on the dev server scripts
 gulp.task('validate-devserver-scripts', pipes.validatedDevServerScripts);
@@ -498,6 +498,6 @@ pipes.builtCompProd = function () {
 pipes.builtComp = isDev ? pipes.builtCompDev : pipes.builtCompProd;
 
 
-gulp.task('comp-clean', _.partial(pipes.cleanTaskImpl, gc.comp.rootDist));
+gulp.task('comp-clean', _.partial(pipes.cleanTaskImpl, gc.comp.distRoot));
 gulp.task('comp-build', pipes.builtComp);
 gulp.task('comp-clean-build', ['comp-clean'], pipes.builtComp);

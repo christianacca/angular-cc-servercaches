@@ -19,7 +19,7 @@ module.exports = function (args) {
 
 
     var appConfig = {
-        rootDist: appPaths.distRoot,
+        distRoot: appPaths.distRoot,
         bowerComponents: {
             builtOtherFiles: builtVendorOtherFiles,
             getOtherFiles: getVendorOtherFiles,
@@ -101,21 +101,9 @@ module.exports = function (args) {
         src: paths.srcRoot + compSrcFolder,
         distRoot: './dist.{{env}}/'
     });
+    var compName = 'angular-cc-servercaches';
     var compConfig = {
-        rootDist: compPaths.distRoot,
-        bowerComponents: {
-            scripts: {
-                dest: compPaths.distRoot + bowerFolder,
-                filter: {dev: false},
-                order: []
-            },
-            styles: {
-                dest: compPaths.distRoot + bowerFolder,
-                filter: {dev: false},
-                order: []
-            },
-            dest: compPaths.distRoot + bowerFolder
-        },
+        distRoot: compPaths.distRoot,
         images: {
             exts: commonImageExts,
             src: {
@@ -139,7 +127,7 @@ module.exports = function (args) {
             },
             isCacheBusted: false,
             isConcatFileOutput: true,
-            outputFile: 'angular-cc-servercaches.js',
+            outputFile: compName + '.js',
             dest: args.env === 'dev' ? compPaths.distRoot : compPaths.distRoot + compSrcFolder
         },
         styles: {
@@ -149,7 +137,7 @@ module.exports = function (args) {
             },
             isCacheBusted: false,
             isConcatFileOutput: true,
-            outputFile: 'angular-cc-servercaches.css',
+            outputFile: compName + '.css',
             dest: args.env === 'dev' ? compPaths.distRoot : compPaths.distRoot + compSrcFolder
         }
     };
@@ -192,7 +180,7 @@ module.exports = function (args) {
     function builtAppOtherFiles(locals){
         var files = getAppOtherFiles(locals);
         return locals.gulp.src(files)
-            .pipe(locals.gulp.dest(config.app.rootDist));
+            .pipe(locals.gulp.dest(config.app.distRoot));
     }
 
     function getVendorOtherFiles(locals) {
@@ -207,6 +195,6 @@ module.exports = function (args) {
     function builtVendorOtherFiles(locals){
         var files = getVendorOtherFiles(locals);
         return locals.gulp.src(files)
-            .pipe(locals.gulp.dest(config.app.rootDist + "fonts"));
+            .pipe(locals.gulp.dest(config.app.distRoot + "fonts"));
     }
 };
