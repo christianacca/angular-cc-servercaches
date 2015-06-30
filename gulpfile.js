@@ -1,11 +1,8 @@
 var args = require('yargs').argv;
 var gulp = require('gulp');
 var plugins = require('gulp-load-plugins')();
-var del = require('del');
 var es = require('event-stream');
 var lib = require('bower-files');
-var path = require('path');
-var Q = require('q');
 var _ = require('lodash');
 
 /**
@@ -21,74 +18,25 @@ var gc = require('./gulp.config')(args);
 
 // == PIPE SEGMENTS ========
 
-var pipes = {};
+var pipes = requirePipes([
+    'clean', 'processed-scripts', 'validated-scripts', 'validated-partials', 'scripted-partials', 'bower-files',
+    'built-scripts-dev', 'built-scripts-prod', 'built-styles-dev', 'built-styles-prod', 'minified-file-name',
+    'vendor-src-maps-by-ext', 'vendor-src-maps-dev', 'vendor-src-maps-prod', 'moved-vendor-scripts-prod'
+]);
 
-pipes.cleanTaskImpl = function(path){
-    var deferred = Q.defer();
-    del(path, function(err) {
-        if (err){
-            deferred.reject(err);
-        } else {
-            deferred.resolve();
-        }
-    });
-    return deferred.promise;
-};
-
-
-pipes.minifiedFileName = function() {
-    return plugins.rename(function (path) {
-        path.extname = '.min' + path.extname;
-    });
-};
-
-pipes.validatedScripts = function(config) {
-    return pipes.processedScripts(config)
-        .pipe(plugins.jshint())
-        .pipe(plugins.jshint.reporter('jshint-stylish', {verbose: true}));
-};
-pipes.processedScripts = function(config) {
-    plugins.nunjucksRender.nunjucks.configure({ watch: false });
-    var jsTplFilter = plugins.filter('**/*.tpl.js');
-    return gulp.src(config.src.path, config.src.options)
-        .pipe(jsTplFilter)
-            .pipe(plugins.data(function(f){
-                var tplData = require(path.dirname(f.path) + '\\' + path.basename(f.path, '.js') + '.json');
-                return tplData && tplData[args.env];
-            }))
-            .pipe(plugins.nunjucksRender())
-            .pipe(plugins.rename(function(f){
-                f.extname = '.js';
-                f.basename = f.basename.replace('.tpl', '');
-            }))
-        .pipe(jsTplFilter.restore());
-};
+function requirePipes(pipeNames){
+    return _(pipeNames).reduce(function(result, name){
+        var fnName = _.camelCase(name);
+        var modulePath = './gulpPipes/gulp-' + name + '-pipe';
+        result[fnName] = require(modulePath)(gulp, plugins, result, { args: args});
+        return result;
+    }, {});
+}
 
 pipes.validatedAppScripts = _.partial(pipes.validatedScripts, gc.app.scripts);
 
-pipes.builtScriptsDev = function(config) {
-    return pipes.validatedScripts(config)
-        .pipe(gulp.dest(config.dest));
-};
-
 // moves app scripts into the dev environment
 pipes.builtAppScriptsDev = _.partial(pipes.builtScriptsDev, gc.app.scripts);
-
-pipes.builtScriptsProd = function(scriptsConfig, partialsConfig) {
-    var scriptedPartials = pipes.scriptedPartials(partialsConfig);
-    var validatedAppScripts = pipes.validatedScripts(scriptsConfig);
-
-    return es.merge(scriptedPartials, validatedAppScripts)
-        .pipe(plugins.angularFilesort())
-        .pipe(plugins.sourcemaps.init())
-            .pipe(plugins.concat({ path: scriptsConfig.outputFile, cwd: ''}))
-            .pipe(scriptsConfig.isConcatFileOutput ? gulp.dest(scriptsConfig.dest) : plugins.util.noop())
-            .pipe(pipes.minifiedFileName())
-            .pipe(plugins.uglify())
-            .pipe(scriptsConfig.isCacheBusted ? plugins.rev() : plugins.util.noop())
-        .pipe(plugins.sourcemaps.write('./'))
-        .pipe(gulp.dest(scriptsConfig.dest));
-};
 
 // concatenates, uglifies, and moves app scripts and partials into the prod environment
 pipes.builtAppScriptsProd = _.partial(pipes.builtScriptsProd, gc.app.scripts, gc.app.partials);
@@ -105,18 +53,7 @@ pipes.appCompScriptsDev = function(){
         .pipe(gulp.dest(gc.app.distRoot));
 };
 
-// moves minified vendor scripts into the production environment
-pipes.appVendorScriptsProd = function(){
-    var config = _.extend({}, gc.app.bowerComponents.scripts, { overrides: gc.app.bowerComponents.overrides });
-    // todo: find a way to concatenate existing minified js that does not break sourcemap concept
-    // ie combining all the minified files into one also includes sourceMapUrl for each js file - this
-    // isn't supported by browsers
-    return pipes.bowerFiles('min.js', config)
-        //.pipe(plugins.order(config.order))
-        //.pipe(plugins.concat('bower_components.min.js'))
-        .pipe(plugins.rev())
-        .pipe(gulp.dest(config.dest));
-};
+pipes.appMovedVendorScriptsProd = _.partial(pipes.movedVendorScriptsProd, gc.app.bowerComponents);
 
 pipes.appCompScriptsProd = function(){
     return pipes.compFiles("min.js")
@@ -130,12 +67,6 @@ pipes.validatedDevServerScripts = function() {
         .pipe(plugins.jshint.reporter('jshint-stylish'));
 };
 
-pipes.validatedPartials = function(config) {
-    return gulp.src(config.src.path, config.src.options)
-        .pipe(plugins.htmlhint({'doctype-first': false}))
-        .pipe(plugins.htmlhint.reporter());
-};
-
 pipes.builtPartials = function(config) {
     return pipes.validatedPartials(config)
         .pipe(gulp.dest(config.dest));
@@ -144,86 +75,14 @@ pipes.builtPartials = function(config) {
 // moves app html source files into the dev environment
 pipes.builtAppPartials = _.partial(pipes.builtPartials, gc.app.partials);
 
-pipes.scriptedPartials = function(config) {
-    return pipes.validatedPartials(config)
-        .pipe(plugins.htmlhint.failReporter())
-        .pipe(plugins.htmlmin({collapseWhitespace: true, removeComments: true}))
-        .pipe(plugins.ngHtml2js({
-            moduleName: config.moduleName
-        }));
-};
 pipes.scriptedAppPartials = _.partial(pipes.scriptedPartials, gc.app.partials);
-
-pipes.bowerFiles = function (ext, options) {
-    var filter = _.extend({}, { skipMissing: false, dev: true }, options && options.filter);
-
-    // note: we having to make up for the fact that bower does not have a mechanism to describe minified main and source
-    // map files
-
-    var typeExt, minExt, mapExt;
-    var extParts = ext.split('.');
-    if (_.last(extParts) === 'map'){
-        mapExt = 'map';
-        typeExt = _.takeRight(extParts, 2)[0];
-    } else {
-        typeExt = _.last(extParts);
-    }
-    if (extParts[0] === 'min'){
-        minExt = 'min';
-    }
-
-    var fileMapFn;
-    if (extParts.length === 1){
-        fileMapFn = _.identity;
-    } else {
-        var replacementExt = _.compact([minExt, typeExt, mapExt]).join('.');
-        fileMapFn = function (name) {
-            return name.replace('.' + typeExt, '.' + replacementExt);
-        };
-    }
-
-    var criteria = {
-        dev: filter.dev,
-        ext: typeExt
-    };
-    var files = lib({ overrides: options.overrides }).filter(criteria).map(fileMapFn);
-    // not sure why gulp-expect-file cannot check files directly :-(
-    var expectedFiles = files.map(function(filePath) {
-        return '**/' + _.last(filePath.split('\\'));
-    });
-    var continuation = gulp.src(files);
-    if (!filter.skipMissing) {
-        continuation = continuation
-            .pipe(plugins.expectFile({ checkRealFile: true, reportMissing: true }, expectedFiles));
-    }
-    return continuation;
-};
 
 pipes.compFiles = function(ext){
     return gulp.src(gc.comp.distRoot + "**/*." + ext);
 };
 
-pipes.builtStylesDev = function(config) {
-    return gulp.src(config.src.path, config.src.options)
-        .pipe(plugins.sass())
-        .pipe(gulp.dest(config.dest));
-};
-
 // compiles app sass and moves to the dev environment
 pipes.builtAppStylesDev = _.partial(pipes.builtStylesDev, gc.app.styles);
-
-pipes.builtStylesProd = function(config) {
-    return gulp.src(config.src.path, config.src.options)
-        .pipe(plugins.sourcemaps.init())
-            .pipe(plugins.sass())
-            .pipe(plugins.concat({path: config.outputFile, cwd: ''}))
-            .pipe(config.isConcatFileOutput ? gulp.dest(config.dest) : plugins.util.noop())
-            .pipe(pipes.minifiedFileName())
-            .pipe(plugins.minifyCss())
-            .pipe(config.isCacheBusted ? plugins.rev(): plugins.util.noop())
-        .pipe(plugins.sourcemaps.write('./'))
-        .pipe(gulp.dest(config.dest));
-};
 
 // compiles and minifies app sass to css and moves to the prod environment
 pipes.builtAppStylesProd = _.partial(pipes.builtStylesProd, gc.app.styles);
@@ -257,37 +116,8 @@ pipes.appCompStylesProd = function(){
         .pipe(gulp.dest(gc.app.distRoot));
 };
 
-pipes.vendorSrcMapsDev = function() {
-    var jsConfig = _.extend({}, gc.app.bowerComponents.scripts, {overrides: gc.app.bowerComponents.overrides});
-    var jsFiles = pipes.vendorSrcMapsByExt('js', jsConfig);
-    var cssConfig = _.extend({}, gc.app.bowerComponents.styles, {overrides: gc.app.bowerComponents.overrides});
-    var cssFiles = pipes.vendorSrcMapsByExt('css', cssConfig);
-    return es.merge(jsFiles, cssFiles);
-};
-
-
-pipes.vendorSrcMapsProd = function() {
-    var jsConfig = _.extend({}, gc.app.bowerComponents.scripts, {overrides: gc.app.bowerComponents.overrides});
-    var jsFiles = pipes.vendorSrcMapsByExt('min.js', jsConfig);
-    var cssConfig = _.extend({}, gc.app.bowerComponents.styles, {overrides: gc.app.bowerComponents.overrides});
-    var cssFiles = pipes.vendorSrcMapsByExt('min.css', cssConfig);
-    return es.merge(jsFiles, cssFiles);
-};
-
-pipes.vendorSrcMapsByExt = function(ext, config) {
-
-    // we need to return the source files as source maps reference them
-    // todo: some source maps will inline the source code, for these we don't need to return the source file
-    var sourceFiles = pipes.bowerFiles(ext, config)
-        .pipe(gulp.dest(gc.app.bowerComponents.dest));
-
-    var srcMapOptions = _.clone(config);
-    srcMapOptions.filter = _.extend({}, srcMapOptions.filter, { skipMissing: true });
-    var sourceMapFiles = pipes.bowerFiles(ext + '.map', srcMapOptions)
-        .pipe(gulp.dest(gc.app.bowerComponents.dest));
-
-    return es.merge(sourceFiles, sourceMapFiles);
-};
+pipes.appVendorSrcMapsDev = _.partial(pipes.vendorSrcMapsDev, gc.app.bowerComponents);
+pipes.appVendorSrcMapsProd = _.partial(pipes.vendorSrcMapsProd, gc.app.bowerComponents);
 
 pipes.processedImagesDev = function(config) {
     return gulp.src(config.src.path, config.src.options)
@@ -345,7 +175,7 @@ pipes.builtIndexDev = function() {
 pipes.builtIndexProd = function() {
 
     var streams = {
-        vendorScripts: pipes.appVendorScriptsProd(),
+        vendorScripts: pipes.appMovedVendorScriptsProd(),
         appScripts: pipes.builtAppScriptsProd(),
         compScripts: pipes.appCompScriptsProd(),
         appStyles: pipes.builtAppStylesProd(),
@@ -382,7 +212,7 @@ pipes.builtAppDev = function() {
     // todo: consider a builtVendorPartials that will copy html templates
     var streams = [
         pipes.builtIndexDev(),
-        pipes.vendorSrcMapsDev(),
+        pipes.appVendorSrcMapsDev(),
         pipes.builtAppPartials(),
         pipes.compFiles("html").pipe(gulp.dest(gc.app.distRoot)),
         pipes.compFiles(gc.comp.images.exts).pipe(gulp.dest(gc.app.distRoot)),
@@ -397,7 +227,7 @@ pipes.builtAppDev = function() {
 pipes.builtAppProd = function() {
     var streams = [
         pipes.builtIndexProd(),
-        pipes.vendorSrcMapsProd(),
+        pipes.appVendorSrcMapsProd(),
         pipes.compFiles("map").pipe(gulp.dest(gc.app.distRoot)),
         pipes.compFiles(gc.comp.images.exts).pipe(gulp.dest(gc.app.distRoot)),
         pipes.processedAppImagesProd(),
@@ -413,7 +243,7 @@ pipes.builtApp = isDev ? pipes.builtAppDev : pipes.builtAppProd;
 // == TASKS ========
 
 // removes all compiled dev files
-gulp.task('app-clean', _.partial(pipes.cleanTaskImpl, gc.app.distRoot));
+gulp.task('app-clean', _.partial(pipes.clean, gc.app.distRoot));
 
 // runs jshint on the dev server scripts
 gulp.task('validate-devserver-scripts', pipes.validatedDevServerScripts);
@@ -498,6 +328,6 @@ pipes.builtCompProd = function () {
 pipes.builtComp = isDev ? pipes.builtCompDev : pipes.builtCompProd;
 
 
-gulp.task('comp-clean', _.partial(pipes.cleanTaskImpl, gc.comp.distRoot));
+gulp.task('comp-clean', _.partial(pipes.clean, gc.comp.distRoot));
 gulp.task('comp-build', pipes.builtComp);
 gulp.task('comp-clean-build', ['comp-clean'], pipes.builtComp);
