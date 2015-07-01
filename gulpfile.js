@@ -18,20 +18,23 @@ var gc = require('./gulp.config')(args);
 
 // == PIPE SEGMENTS ========
 
-var pipes = requirePipes([
-    'clean', 'processed-scripts', 'validated-scripts', 'validated-partials', 'scripted-partials', 'bower-files',
-    'built-scripts-dev', 'built-scripts-prod', 'built-styles-dev', 'built-styles-prod', 'minified-file-name',
-    'vendor-src-maps-by-ext', 'vendor-src-maps-dev', 'vendor-src-maps-prod', 'moved-vendor-scripts-prod'
-]);
 
-function requirePipes(pipeNames){
-    return _(pipeNames).reduce(function(result, name){
-        var fnName = _.camelCase(name);
-        var modulePath = './gulpPipes/gulp-' + name + '-pipe';
-        result[fnName] = require(modulePath)(gulp, plugins, result, { args: args});
-        return result;
-    }, {});
-}
+var pipeOptions = {
+    standardPipesDir: './gulpPipes/',
+    customPipesDir: './gulpPipesCustom/',
+    gulp: gulp,
+    locals: {
+        args: args
+    },
+    plugins: plugins,
+    pipeArgs: {
+        compFiles: {
+            compDir: gc.comp.distRoot
+        }
+    }
+};
+var pipes = require('./gulpBlocks/loadPipes')(pipeOptions);
+
 
 pipes.validatedAppScripts = _.partial(pipes.validatedScripts, gc.app.scripts);
 
@@ -41,12 +44,7 @@ pipes.builtAppScriptsDev = _.partial(pipes.builtScriptsDev, gc.app.scripts);
 // concatenates, uglifies, and moves app scripts and partials into the prod environment
 pipes.builtAppScriptsProd = _.partial(pipes.builtScriptsProd, gc.app.scripts, gc.app.partials);
 
-// moves vendor scripts into the dev environment
-pipes.appVendorScriptsDev = function(){
-    var config = _.extend({}, gc.app.bowerComponents.scripts, { overrides: gc.app.bowerComponents.overrides });
-    return pipes.bowerFiles('js', config)
-        .pipe(gulp.dest(config.dest));
-};
+pipes.appMovedVendorScriptsDev = _.partial(pipes.movedVendorScriptsDev, gc.app.bowerComponents);
 
 pipes.appCompScriptsDev = function(){
     return pipes.compFiles("js")
@@ -67,19 +65,10 @@ pipes.validatedDevServerScripts = function() {
         .pipe(plugins.jshint.reporter('jshint-stylish'));
 };
 
-pipes.builtPartials = function(config) {
-    return pipes.validatedPartials(config)
-        .pipe(gulp.dest(config.dest));
-};
-
 // moves app html source files into the dev environment
 pipes.builtAppPartials = _.partial(pipes.builtPartials, gc.app.partials);
 
 pipes.scriptedAppPartials = _.partial(pipes.scriptedPartials, gc.app.partials);
-
-pipes.compFiles = function(ext){
-    return gulp.src(gc.comp.distRoot + "**/*." + ext);
-};
 
 // compiles app sass and moves to the dev environment
 pipes.builtAppStylesDev = _.partial(pipes.builtStylesDev, gc.app.styles);
@@ -87,28 +76,14 @@ pipes.builtAppStylesDev = _.partial(pipes.builtStylesDev, gc.app.styles);
 // compiles and minifies app sass to css and moves to the prod environment
 pipes.builtAppStylesProd = _.partial(pipes.builtStylesProd, gc.app.styles);
 
-pipes.appVendorStylesDev = function(){
-    var config = _.extend({}, gc.app.bowerComponents.styles, { overrides: gc.app.bowerComponents.overrides });
-    return pipes.bowerFiles('css', config)
-        .pipe(gulp.dest(config.dest));
-};
+pipes.appMovedVendorStylesDev = _.partial(pipes.movedVendorStylesDev, gc.app.bowerComponents);
 
 pipes.appCompStylesDev = function(){
     return pipes.compFiles("css")
         .pipe(gulp.dest(gc.app.distRoot));
 };
 
-pipes.appVendorStylesProd = function(){
-    var config = _.extend({}, gc.app.bowerComponents.styles, { overrides: gc.app.bowerComponents.overrides });
-    // todo: find a way to concatenate existing minified css that does not break sourcemap concept
-    // ie combining all the minified files into one also includes sourceMapUrl for each css file - this
-    // isn't supported by browsers
-    return pipes.bowerFiles('min.css', config)
-        .pipe(plugins.order(config.order))
-        //.pipe(plugins.concat('bower_components.min.css'))
-        .pipe(plugins.rev())
-        .pipe(gulp.dest(config.dest));
-};
+pipes.appMovedVendorStylesProd = _.partial(pipes.movedVendorStylesProd, gc.app.bowerComponents);
 
 pipes.appCompStylesProd = function(){
     return pipes.compFiles("min.css")
@@ -157,11 +132,11 @@ pipes.buildIndex = function(streams) {
 pipes.builtIndexDev = function() {
 
     var streams = {
-        vendorScripts: pipes.appVendorScriptsDev()
+        vendorScripts: pipes.appMovedVendorScriptsDev()
             .pipe(plugins.order(gc.app.bowerComponents.scripts.order)),
         compScripts: pipes.appCompScriptsDev().pipe(plugins.angularFilesort()),
         appScripts: pipes.builtAppScriptsDev().pipe(plugins.angularFilesort()),
-        vendorStyles: pipes.appVendorStylesDev()
+        vendorStyles: pipes.appMovedVendorStylesDev()
             .pipe(plugins.order(gc.app.bowerComponents.styles.order)),
         compStyles: pipes.appCompStylesDev(),
         appStyles: pipes.builtAppStylesDev()
@@ -180,7 +155,7 @@ pipes.builtIndexProd = function() {
         compScripts: pipes.appCompScriptsProd(),
         appStyles: pipes.builtAppStylesProd(),
         compStyles: pipes.appCompStylesProd(),
-        vendorStyles: pipes.appVendorStylesProd()
+        vendorStyles: pipes.appMovedVendorStylesProd()
     };
 
     return pipes.buildIndex(streams)
