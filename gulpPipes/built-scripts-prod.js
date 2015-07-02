@@ -4,6 +4,7 @@ module.exports = function(gulp, plugins, pipes/*, locals*/) {
 
     return builtScriptsProd;
 
+    // concatenates, uglifies, and moves scripts and partials into the prod environment
     function builtScriptsProd(scriptsConfig, partialsConfig) {
         var scriptedPartials = pipes.scriptedPartials(partialsConfig);
         var validatedAppScripts = pipes.validatedScripts(scriptsConfig);

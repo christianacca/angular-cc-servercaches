@@ -3,9 +3,9 @@ module.exports = function(gulp, plugins, pipes/*, locals*/) {
     var es = require('event-stream'),
         _ = require('lodash');
 
-    return vendorSrcMapsByExt;
+    return movedVendorSrcMapsByExt;
 
-    function vendorSrcMapsByExt(ext, config) {
+    function movedVendorSrcMapsByExt(ext, config) {
 
         // we need to return the source files as source maps reference them
         // todo: some source maps will inline the source code, for these we don't need to return the source file

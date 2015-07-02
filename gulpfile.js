@@ -24,12 +24,19 @@ var pipeOptions = {
     customPipesDir: './gulpPipesCustom/',
     gulp: gulp,
     locals: {
-        args: args
+        args: args,
+        config: gc.app
     },
     plugins: plugins,
     pipeArgs: {
+        buildIndex: {
+            dest: gc.app.distRoot
+        },
         compFiles: {
             compDir: gc.comp.distRoot
+        },
+        validatedIndex: {
+            indexPage: gc.app.indexPage
         }
     }
 };
@@ -38,26 +45,9 @@ var pipes = require('./gulpBlocks/loadPipes')(pipeOptions);
 
 pipes.validatedAppScripts = _.partial(pipes.validatedScripts, gc.app.scripts);
 
-// moves app scripts into the dev environment
-pipes.builtAppScriptsDev = _.partial(pipes.builtScriptsDev, gc.app.scripts);
 
-// concatenates, uglifies, and moves app scripts and partials into the prod environment
-pipes.builtAppScriptsProd = _.partial(pipes.builtScriptsProd, gc.app.scripts, gc.app.partials);
 
-pipes.appMovedVendorScriptsDev = _.partial(pipes.movedVendorScriptsDev, gc.app.bowerComponents);
 
-pipes.appCompScriptsDev = function(){
-    return pipes.compFiles("js")
-        .pipe(gulp.dest(gc.app.distRoot));
-};
-
-pipes.appMovedVendorScriptsProd = _.partial(pipes.movedVendorScriptsProd, gc.app.bowerComponents);
-
-pipes.appCompScriptsProd = function(){
-    return pipes.compFiles("min.js")
-        .pipe(plugins.rev())
-        .pipe(gulp.dest(gc.app.distRoot));
-};
 
 pipes.validatedDevServerScripts = function() {
     return gulp.src(gc.app.scriptsDevServer.src.path)
@@ -65,155 +55,32 @@ pipes.validatedDevServerScripts = function() {
         .pipe(plugins.jshint.reporter('jshint-stylish'));
 };
 
-// moves app html source files into the dev environment
-pipes.builtAppPartials = _.partial(pipes.builtPartials, gc.app.partials);
-
 pipes.scriptedAppPartials = _.partial(pipes.scriptedPartials, gc.app.partials);
 
-// compiles app sass and moves to the dev environment
-pipes.builtAppStylesDev = _.partial(pipes.builtStylesDev, gc.app.styles);
 
-// compiles and minifies app sass to css and moves to the prod environment
-pipes.builtAppStylesProd = _.partial(pipes.builtStylesProd, gc.app.styles);
 
-pipes.appMovedVendorStylesDev = _.partial(pipes.movedVendorStylesDev, gc.app.bowerComponents);
-
-pipes.appCompStylesDev = function(){
-    return pipes.compFiles("css")
-        .pipe(gulp.dest(gc.app.distRoot));
-};
-
-pipes.appMovedVendorStylesProd = _.partial(pipes.movedVendorStylesProd, gc.app.bowerComponents);
-
-pipes.appCompStylesProd = function(){
-    return pipes.compFiles("min.css")
-        .pipe(plugins.rev())
-        .pipe(gulp.dest(gc.app.distRoot));
-};
-
-pipes.appVendorSrcMapsDev = _.partial(pipes.vendorSrcMapsDev, gc.app.bowerComponents);
-pipes.appVendorSrcMapsProd = _.partial(pipes.vendorSrcMapsProd, gc.app.bowerComponents);
-
-pipes.processedImagesDev = function(config) {
-    return gulp.src(config.src.path, config.src.options)
-        .pipe(gulp.dest(config.dest));
-};
-
-pipes.processedAppImagesDev = _.partial(pipes.processedImagesDev, gc.app.images);
-
-pipes.processedImagesProd = function(config) {
-    return gulp.src(config.src.path, config.src.options)
-        .pipe(plugins.flatten())
-        .pipe(gulp.dest(config.dest));
-};
+pipes.appMovedVendorSrcMapsProd = _.partial(pipes.movedVendorSrcMapsProd, gc.app.bowerComponents);
 
 pipes.processedAppImagesProd = _.partial(pipes.processedImagesProd, gc.app.images);
 
-// checks index.html for syntax errors
-pipes.validatedIndex = function() {
-    return gulp.src(gc.app.indexPage)
-        .pipe(plugins.htmlhint())
-        .pipe(plugins.htmlhint.reporter());
-};
 
-pipes.buildIndex = function(streams) {
-    return pipes.validatedIndex()
-        .pipe(gulp.dest(gc.app.distRoot)) // write first to get relative path for inject
-        .pipe(plugins.inject(streams.vendorScripts, {relative: true, name: 'bower'}))
-        .pipe(plugins.inject(streams.compScripts, {relative: true, name: 'component'}))
-        .pipe(plugins.inject(streams.appScripts, {relative: true}))
-        .pipe(plugins.inject(streams.vendorStyles, {relative: true, name: 'bower'}))
-        .pipe(plugins.inject(streams.compStyles, {relative: true, name: 'component'}))
-        .pipe(plugins.inject(streams.appStyles, {relative: true}));
-};
-
-
-// validates and injects sources into index.html and moves it to the dev environment
-pipes.builtIndexDev = function() {
-
-    var streams = {
-        vendorScripts: pipes.appMovedVendorScriptsDev()
-            .pipe(plugins.order(gc.app.bowerComponents.scripts.order)),
-        compScripts: pipes.appCompScriptsDev().pipe(plugins.angularFilesort()),
-        appScripts: pipes.builtAppScriptsDev().pipe(plugins.angularFilesort()),
-        vendorStyles: pipes.appMovedVendorStylesDev()
-            .pipe(plugins.order(gc.app.bowerComponents.styles.order)),
-        compStyles: pipes.appCompStylesDev(),
-        appStyles: pipes.builtAppStylesDev()
-    };
-
-    return pipes.buildIndex(streams)
-        .pipe(gulp.dest(gc.app.distRoot));
-};
-
-// validates and injects sources into index.html, minifies and moves it to the prod environment
-pipes.builtIndexProd = function() {
-
-    var streams = {
-        vendorScripts: pipes.appMovedVendorScriptsProd(),
-        appScripts: pipes.builtAppScriptsProd(),
-        compScripts: pipes.appCompScriptsProd(),
-        appStyles: pipes.builtAppStylesProd(),
-        compStyles: pipes.appCompStylesProd(),
-        vendorStyles: pipes.appMovedVendorStylesProd()
-    };
-
-    return pipes.buildIndex(streams)
-        .pipe(plugins.htmlmin({collapseWhitespace: true, removeComments: true})
-        .pipe(gulp.dest(gc.app.distRoot)));
-};
-
-function getLocals() {
-    var locals = {
-        pipes: pipes,
-        plugins: plugins,
-        gulp: gulp,
-        lib: lib
-    };
-    return locals;
-}
-
-pipes.buildOtherFiles = function(buildFn) {
-    if (!buildFn) return null;
-
-    var locals = getLocals();
-    return buildFn(locals);
-};
-
-pipes.appVendorOtherFiles = _.partial(pipes.buildOtherFiles, gc.app.bowerComponents.builtOtherFiles);
-pipes.builtAppOtherFiles = _.partial(pipes.buildOtherFiles, gc.app.builtOtherFiles);
-
-pipes.builtAppDev = function() {
-    // todo: consider a builtVendorPartials that will copy html templates
-    var streams = [
-        pipes.builtIndexDev(),
-        pipes.appVendorSrcMapsDev(),
-        pipes.builtAppPartials(),
-        pipes.compFiles("html").pipe(gulp.dest(gc.app.distRoot)),
-        pipes.compFiles(gc.comp.images.exts).pipe(gulp.dest(gc.app.distRoot)),
-        pipes.processedAppImagesDev(),
-        pipes.appVendorOtherFiles(),
-        pipes.builtCompOtherFiles(),
-        pipes.builtAppOtherFiles()
-    ];
-    return es.merge(_.compact(streams));
-};
+pipes.appBuiltIndexProd = _.partial(pipes.builtIndexProd, gc.app);
 
 pipes.builtAppProd = function() {
     var streams = [
-        pipes.builtIndexProd(),
-        pipes.appVendorSrcMapsProd(),
+        pipes.appBuiltIndexProd(),
+        pipes.appMovedVendorSrcMapsProd(),
         pipes.compFiles("map").pipe(gulp.dest(gc.app.distRoot)),
         pipes.compFiles(gc.comp.images.exts).pipe(gulp.dest(gc.app.distRoot)),
         pipes.processedAppImagesProd(),
-        pipes.appVendorOtherFiles(),
-        pipes.builtCompOtherFiles(),
-        pipes.builtAppOtherFiles()
+        pipes.movedVendorOtherFiles(),
+        pipes.movedCompOtherFiles(),
+        pipes.builtOtherFiles()
     ];
     return es.merge(_.compact(streams));
 };
 
-pipes.builtApp = isDev ? pipes.builtAppDev : pipes.builtAppProd;
+pipes.builtApp = isDev ? _.partial(pipes.builtAppDev, gc.app) : pipes.builtAppProd;
 
 // == TASKS ========
 
@@ -232,34 +99,8 @@ gulp.task('app-build', pipes.builtApp);
 // cleans and builds a complete environment
 gulp.task('app-clean-build', ['app-clean'], pipes.builtApp);
 
-// clean, build, and watch live changes
-gulp.task('app-watch', ['app-clean-build', 'validate-devserver-scripts'], function() {
 
-    // start nodemon to auto-reload the dev server
-    plugins.nodemon({ script: 'server.js', ext: 'js', watch: ['devServer/'], env: {NODE_ENV : 'development'} })
-        .on('change', ['validate-devserver-scripts'])
-        .on('restart', function () {
-            console.log('[nodemon] restarted dev server');
-        });
-
-    // rebuild scripts, etc and inject them into index page
-    var builtIndex = isDev ? pipes.builtIndexDev : pipes.builtIndexProd;
-    gulp.watch([gc.app.indexPage, gc.app.scripts.src.path, gc.app.styles.src.path], builtIndex);
-
-    // watch html partials
-    var onPartialsChanged = isDev ? pipes.builtAppPartials : pipes.builtIndexDev;
-    gulp.watch(gc.app.partials.src.path, onPartialsChanged);
-
-    // watch images
-    var processedImages = isDev ? pipes.processedAppImagesDev : pipes.processedAppImagesProd;
-    gulp.watch(gc.app.images.src.path, processedImages);
-
-    // watch other files
-    if (gc.app.getOtherFiles) {
-        gulp.watch(gc.app.getOtherFiles(), pipes.builtAppOtherFiles);
-    }
-
-});
+gulp.task('app-watch', ['app-clean-build', 'validate-devserver-scripts'], _.partial(pipes.watch, gc.app));
 
 // default task builds for dev
 gulp.task('default', ['app-clean-build']);

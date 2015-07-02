@@ -19,9 +19,10 @@ module.exports = function (args) {
 
 
     var appConfig = {
+        isComponentBuild: false,
         distRoot: appPaths.distRoot,
         bowerComponents: {
-            builtOtherFiles: builtVendorOtherFiles,
+            movedOtherFiles: movedVendorOtherFiles,
             getOtherFiles: getVendorOtherFiles,
             overrides: {
                 // only want css and fonts from bs
@@ -48,6 +49,17 @@ module.exports = function (args) {
                 order: ['bootstrap.*']
             },
             dest: appPaths.distRoot + bowerFolder
+        },
+        component: {
+            images: {
+                exts: commonImageExts
+            },
+            scripts: {
+                dest: appPaths.distRoot
+            },
+            styles: {
+                dest: appPaths.distRoot
+            }
         },
         builtOtherFiles: builtAppOtherFiles,
         getOtherFiles: getAppOtherFiles,
@@ -103,6 +115,7 @@ module.exports = function (args) {
     });
     var compName = 'angular-cc-servercaches';
     var compConfig = {
+        isComponentBuild: true,
         distRoot: compPaths.distRoot,
         images: {
             exts: commonImageExts,
@@ -192,7 +205,7 @@ module.exports = function (args) {
         return files;
     }
 
-    function builtVendorOtherFiles(locals){
+    function movedVendorOtherFiles(locals){
         var files = getVendorOtherFiles(locals);
         return locals.gulp.src(files)
             .pipe(locals.gulp.dest(config.app.distRoot + "fonts"));
