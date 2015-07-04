@@ -1,8 +1,23 @@
 module.exports = function(options) {
+    var defaultOptions = {
+        standardPipesDir: './gulp/pipes/',
+        customPipesDir: './gulp/pipesCustom/',
+        gulp: require('gulp'),
+        locals: {
+            args: {},
+            config: {}
+        },
+        plugins: {},
+        pipeArgs: {}
+    };
+
     var _ = require('lodash'),
         requireDir = require('require-dir'),
         fs = require('fs'),
         path = require('path');
+
+
+    options = _.defaultsDeep(options, defaultOptions);
 
     var stdPipeModules = requirePipeModules(options.standardPipesDir);
     var normalizedStdPipeModules = _.merge(stdPipeModules.shared, stdPipeModules[options.locals.args.env] || {});
@@ -27,7 +42,7 @@ module.exports = function(options) {
     function requirePipeModules(dirPath) {
         if (!fs.existsSync(dirPath)) return {};
 
-        var modulesDic = requireDir(path.join('..', dirPath), { recurse: true });
+        var modulesDic = requireDir(path.join('../..', dirPath), { recurse: true });
         return _(modulesDic).reduce(function(result, modules, key){
             result[key] = _.mapKeys(modules, function(module, moduleName){
                 return _.camelCase(moduleName);

@@ -51,6 +51,7 @@ module.exports = function (args) {
             dest: appPaths.distRoot + bowerFolder
         },
         component: {
+            srcRoot: './dist.{{env}}/',
             images: {
                 exts: commonImageExts
             },
@@ -79,6 +80,9 @@ module.exports = function (args) {
             },
             moduleName: 'shared',
             dest: appPaths.distRoot
+        },
+        pipesOptions: {
+            pipeArgs: {}
         },
         scripts: {
             src: {

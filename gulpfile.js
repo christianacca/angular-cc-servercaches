@@ -20,33 +20,14 @@ var gc = require('./gulp.config')(args);
 
 
 var pipeOptions = {
-    standardPipesDir: './gulpPipes/',
-    customPipesDir: './gulpPipesCustom/',
-    gulp: gulp,
     locals: {
         args: args,
         config: gc.app
     },
-    plugins: plugins,
-    pipeArgs: {
-        buildIndex: {
-            dest: gc.app.distRoot
-        },
-        compFiles: {
-            compDir: gc.comp.distRoot
-        },
-        validatedIndex: {
-            indexPage: gc.app.indexPage
-        }
-    }
+    plugins: plugins
 };
-var pipes = require('./gulpBlocks/loadPipes')(pipeOptions);
-
-
-pipes.validatedAppScripts = _.partial(pipes.validatedScripts, gc.app.scripts);
-
-
-
+pipeOptions = _.extend({}, gc.app.pipesOptions, pipeOptions);
+var pipes = require('./gulp/blocks/loadPipes')(pipeOptions);
 
 
 pipes.validatedDevServerScripts = function() {
@@ -66,7 +47,7 @@ gulp.task('app-clean', _.partial(pipes.clean, gc.app.distRoot));
 gulp.task('validate-devserver-scripts', pipes.validatedDevServerScripts);
 
 // runs jshint on the app scripts
-gulp.task('app-validate-scripts', pipes.validatedAppScripts);
+gulp.task('app-validate-scripts', _.partial(pipes.validatedScripts, gc.app.scripts));
 
 // builds a complete environment
 gulp.task('app-build', pipes.builtApp);

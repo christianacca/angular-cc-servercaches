@@ -4,9 +4,7 @@ module.exports = function(gulp, plugins, pipes, locals) {
 
     // validates and injects sources into index.html and moves it to the dev environment
     function builtIndex(config) {
-
         config = config || locals.config;
-
         var streams = {
             vendorScripts: pipes.movedVendorScripts(config.bowerComponents)
                 .pipe(plugins.order(config.bowerComponents.scripts.order)),
@@ -18,7 +16,7 @@ module.exports = function(gulp, plugins, pipes, locals) {
             appStyles: pipes.builtStyles(config.styles)
         };
 
-        return pipes.buildIndex(streams)
+        return pipes.buildIndex(streams, config)
             .pipe(gulp.dest(config.distRoot));
     }
 };

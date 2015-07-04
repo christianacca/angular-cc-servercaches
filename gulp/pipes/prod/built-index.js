@@ -4,9 +4,7 @@ module.exports = function(gulp, plugins, pipes, locals) {
 
     // validates and injects sources into index.html, minifies and moves it to the prod environment
     function builtIndex(config) {
-
         config = config || locals.config;
-
         var streams = {
             vendorScripts: pipes.movedVendorScripts(config.bowerComponents),
             appScripts: pipes.builtScripts(config.scripts, config.partials),
@@ -16,7 +14,7 @@ module.exports = function(gulp, plugins, pipes, locals) {
             vendorStyles: pipes.movedVendorStyles(config.bowerComponents)
         };
 
-        return pipes.buildIndex(streams)
+        return pipes.buildIndex(streams, config)
             .pipe(plugins.htmlmin({collapseWhitespace: true, removeComments: true})
                 .pipe(gulp.dest(config.distRoot)));
     }
