@@ -55,7 +55,7 @@ pipes.validatedDevServerScripts = function() {
         .pipe(plugins.jshint.reporter('jshint-stylish'));
 };
 
-pipes.builtApp = isDev ? _.partial(pipes.builtAppDev, gc.app) : _.partial(pipes.builtAppProd, gc.app);
+pipes.builtApp = _.partial(pipes.builtApp, gc.app);
 
 // == TASKS ========
 
@@ -83,42 +83,42 @@ gulp.task('default', ['app-clean-build']);
 
 /* Component build */
 
-pipes.builtCompScriptsDev = _.partial(pipes.builtScriptsDev, gc.comp.scripts);
-pipes.builtCompPartials = _.partial(pipes.builtPartials, gc.comp.partials);
-pipes.builtCompStylesDev = _.partial(pipes.builtStylesDev, gc.comp.styles);
-pipes.processedCompImagesDev = _.partial(pipes.processedImagesDev, gc.comp.images);
-pipes.builtCompOtherFiles = _.partial(pipes.buildOtherFiles, gc.comp.builtOtherFiles);
+//pipes.builtCompScriptsDev = _.partial(pipes.builtScriptsDev, gc.comp.scripts);
+//pipes.builtCompPartials = _.partial(pipes.builtPartials, gc.comp.partials);
+//pipes.builtCompStylesDev = _.partial(pipes.builtStylesDev, gc.comp.styles);
+//pipes.processedCompImagesDev = _.partial(pipes.processedImagesDev, gc.comp.images);
+//pipes.builtCompOtherFiles = _.partial(pipes.buildOtherFiles, gc.comp.builtOtherFiles);
+//
+//pipes.builtCompDev = function () {
+//
+//    var streams = [
+//        pipes.builtCompScriptsDev(),
+//        pipes.builtCompStylesDev(),
+//        pipes.builtCompPartials(),
+//        pipes.processedCompImagesDev(),
+//        pipes.builtCompOtherFiles()
+//    ];
+//
+//    return es.merge(_.compact(streams));
+//};
 
-pipes.builtCompDev = function () {
-
-    var streams = [
-        pipes.builtCompScriptsDev(),
-        pipes.builtCompStylesDev(),
-        pipes.builtCompPartials(),
-        pipes.processedCompImagesDev(),
-        pipes.builtCompOtherFiles()
-    ];
-
-    return es.merge(_.compact(streams));
-};
-
-pipes.builtCompScriptsProd = _.partial(pipes.builtScriptsProd, gc.comp.scripts, gc.comp.partials);
-pipes.builtCompStylesProd = _.partial(pipes.builtStylesProd, gc.comp.styles);
-
-pipes.builtCompProd = function () {
-
-    var streams = [
-        pipes.builtCompScriptsProd(),
-        pipes.builtCompStylesProd(),
-        pipes.processedImagesProd(gc.comp.images),
-        pipes.builtCompOtherFiles()
-    ];
-
-    return es.merge(_.compact(streams));
-};
-pipes.builtComp = isDev ? pipes.builtCompDev : pipes.builtCompProd;
-
-
-gulp.task('comp-clean', _.partial(pipes.clean, gc.comp.distRoot));
-gulp.task('comp-build', pipes.builtComp);
-gulp.task('comp-clean-build', ['comp-clean'], pipes.builtComp);
+//pipes.builtCompScriptsProd = _.partial(pipes.builtScriptsProd, gc.comp.scripts, gc.comp.partials);
+//pipes.builtCompStylesProd = _.partial(pipes.builtStylesProd, gc.comp.styles);
+//
+//pipes.builtCompProd = function () {
+//
+//    var streams = [
+//        pipes.builtCompScriptsProd(),
+//        pipes.builtCompStylesProd(),
+//        pipes.processedImagesProd(gc.comp.images),
+//        pipes.builtCompOtherFiles()
+//    ];
+//
+//    return es.merge(_.compact(streams));
+//};
+//pipes.builtComp = isDev ? pipes.builtCompDev : pipes.builtCompProd;
+//
+//
+//gulp.task('comp-clean', _.partial(pipes.clean, gc.comp.distRoot));
+//gulp.task('comp-build', pipes.builtComp);
+//gulp.task('comp-clean-build', ['comp-clean'], pipes.builtComp);

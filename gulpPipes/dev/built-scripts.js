@@ -1,8 +1,8 @@
 module.exports = function(gulp, plugins, pipes/*, locals*/) {
 
-    return builtScriptsDev;
+    return builtScripts;
 
-    function builtScriptsDev(config) {
+    function builtScripts(config) {
         return pipes.validatedScripts(config)
             .pipe(gulp.dest(config.dest));
     }

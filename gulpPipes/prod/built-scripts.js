@@ -2,10 +2,10 @@ module.exports = function(gulp, plugins, pipes/*, locals*/) {
 
     var es = require('event-stream');
 
-    return builtScriptsProd;
+    return builtScripts;
 
     // concatenates, uglifies, and moves scripts and partials into the prod environment
-    function builtScriptsProd(scriptsConfig, partialsConfig) {
+    function builtScripts(scriptsConfig, partialsConfig) {
         var scriptedPartials = pipes.scriptedPartials(partialsConfig);
         var validatedAppScripts = pipes.validatedScripts(scriptsConfig);
 

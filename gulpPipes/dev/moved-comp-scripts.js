@@ -1,9 +1,9 @@
 module.exports = function(gulp, plugins, pipes/*, locals*/) {
 
-    return movedCompScriptsDev;
+    return movedCompScripts;
 
     // moves component scripts into the dev environment
-    function movedCompScriptsDev(config){
+    function movedCompScripts(config){
         return pipes.compFiles("js")
             .pipe(gulp.dest(config.scripts.dest));
     }

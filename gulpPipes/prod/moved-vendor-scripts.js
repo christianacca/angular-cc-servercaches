@@ -2,10 +2,10 @@ module.exports = function(gulp, plugins, pipes/*, locals*/) {
 
     var _ = require('lodash');
 
-    return movedVendorScriptsProd;
+    return movedVendorScripts;
 
     // moves minified vendor scripts into the production environment
-    function movedVendorScriptsProd(config){
+    function movedVendorScripts(config){
         var sharedConfig = {overrides: config.overrides};
         var scriptsConfig = _.extend({}, config.scripts, sharedConfig);
         // todo: find a way to concatenate existing minified js that does not break sourcemap concept

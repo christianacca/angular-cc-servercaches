@@ -5,8 +5,10 @@ module.exports = function(options) {
         path = require('path');
 
     var stdPipeModules = requirePipeModules(options.standardPipesDir);
+    var normalizedStdPipeModules = _.merge(stdPipeModules.shared, stdPipeModules[options.locals.args.env] || {});
     var custPipesModules = requirePipeModules(options.customPipesDir);
-    var mergedModules = _.merge(stdPipeModules, custPipesModules, function(stdModule, custModule){
+    var normalizedCustPipeModules = _.merge(custPipesModules.shared, custPipesModules[options.locals.args.env] || {});
+    var mergedModules = _.merge(normalizedStdPipeModules, normalizedCustPipeModules || {}, function(stdModule, custModule){
         custModule.baseModule = stdModule;
         return custModule;
     });
@@ -25,10 +27,12 @@ module.exports = function(options) {
     function requirePipeModules(dirPath) {
         if (!fs.existsSync(dirPath)) return {};
 
-        var dirModules = requireDir(path.join('..', dirPath), { recurse: true });
-        return _(dirModules).reduce(function(modules, module, moduleName){
-            modules[_.camelCase(moduleName)] = module;
-            return modules;
+        var modulesDic = requireDir(path.join('..', dirPath), { recurse: true });
+        return _(modulesDic).reduce(function(result, modules, key){
+            result[key] = _.mapKeys(modules, function(module, moduleName){
+                return _.camelCase(moduleName);
+            });
+            return result;
         }, {});
     }
 };

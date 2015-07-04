@@ -1,9 +1,9 @@
 module.exports = function(gulp, plugins, pipes/*, locals*/) {
 
-    return builtStylesProd;
+    return builtStyles;
 
     // compiles and minifies css and moves to the prod environment
-    function builtStylesProd(config) {
+    function builtStyles(config) {
         return gulp.src(config.src.path, config.src.options)
             .pipe(plugins.sourcemaps.init())
                 .pipe(plugins.sass())

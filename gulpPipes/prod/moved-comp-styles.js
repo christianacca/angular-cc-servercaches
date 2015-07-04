@@ -1,11 +1,10 @@
 module.exports = function(gulp, plugins, pipes/*, locals*/) {
 
-    return movedCompStylesProd;
+    return movedCompStyles;
 
     // moves component styles into the production environment
-    function movedCompStylesProd(config){
-        return pipes.compFiles("min.css")
-            .pipe(plugins.rev())
+    function movedCompStyles(config){
+        return pipes.compFiles('min.css')
             .pipe(gulp.dest(config.styles.dest));
     }
 };

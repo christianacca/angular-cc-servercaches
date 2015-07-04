@@ -9,15 +9,13 @@ module.exports = function(gulp, plugins, pipes, locals) {
     function watch(config) {
 
         // rebuild scripts, etc and inject them into index page
-        var builtIndex = isDev ? pipes.builtIndexDev : pipes.builtIndexProd;
-        gulp.watch([config.indexPage, config.scripts.src.path, config.styles.src.path], _.partial(builtIndex, config));
+        gulp.watch([config.indexPage, config.scripts.src.path, config.styles.src.path], _.partial(pipes.builtIndex, config));
 
         // watch html partials
-        var onPartialsChanged = isDev ? _.partial(pipes.builtPartials, config.partials) : _.partial(pipes.builtIndexDev, config);
+        var onPartialsChanged = isDev ? _.partial(pipes.builtPartials, config.partials) : _.partial(pipes.builtIndex, config);
         gulp.watch(config.partials.src.path, onPartialsChanged);
 
         // watch images
-        var processedImages = isDev ? pipes.processedImagesDev : pipes.processedImagesProd;
         gulp.watch(config.images.src.path, _.partial(processedImages, config));
 
         // watch other files

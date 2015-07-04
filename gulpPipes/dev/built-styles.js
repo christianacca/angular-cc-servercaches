@@ -1,8 +1,8 @@
 module.exports = function(gulp, plugins/*, pipes, locals*/) {
 
-    return builtStylesDev;
+    return builtStyles;
 
-    function builtStylesDev(config) {
+    function builtStyles(config) {
         return gulp.src(config.src.path, config.src.options)
             .pipe(plugins.sass())
             .pipe(gulp.dest(config.dest));
