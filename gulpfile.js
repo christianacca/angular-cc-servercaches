@@ -55,32 +55,7 @@ pipes.validatedDevServerScripts = function() {
         .pipe(plugins.jshint.reporter('jshint-stylish'));
 };
 
-pipes.scriptedAppPartials = _.partial(pipes.scriptedPartials, gc.app.partials);
-
-
-
-pipes.appMovedVendorSrcMapsProd = _.partial(pipes.movedVendorSrcMapsProd, gc.app.bowerComponents);
-
-pipes.processedAppImagesProd = _.partial(pipes.processedImagesProd, gc.app.images);
-
-
-pipes.appBuiltIndexProd = _.partial(pipes.builtIndexProd, gc.app);
-
-pipes.builtAppProd = function() {
-    var streams = [
-        pipes.appBuiltIndexProd(),
-        pipes.appMovedVendorSrcMapsProd(),
-        pipes.compFiles("map").pipe(gulp.dest(gc.app.distRoot)),
-        pipes.compFiles(gc.comp.images.exts).pipe(gulp.dest(gc.app.distRoot)),
-        pipes.processedAppImagesProd(),
-        pipes.movedVendorOtherFiles(),
-        pipes.movedCompOtherFiles(),
-        pipes.builtOtherFiles()
-    ];
-    return es.merge(_.compact(streams));
-};
-
-pipes.builtApp = isDev ? _.partial(pipes.builtAppDev, gc.app) : pipes.builtAppProd;
+pipes.builtApp = isDev ? _.partial(pipes.builtAppDev, gc.app) : _.partial(pipes.builtAppProd, gc.app);
 
 // == TASKS ========
 

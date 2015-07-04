@@ -1,4 +1,4 @@
-module.exports = function(gulp, plugins, pipes/*, locals*/) {
+module.exports = function(gulp, plugins, pipes, locals) {
 
     var es = require('event-stream'),
         _ = require('lodash');
@@ -6,6 +6,7 @@ module.exports = function(gulp, plugins, pipes/*, locals*/) {
     return movedVendorSrcMapsProd;
 
     function movedVendorSrcMapsProd(config) {
+        config = config || locals.config.bowerComponents;
         var sharedConfig = {
             overrides: config.overrides
         };

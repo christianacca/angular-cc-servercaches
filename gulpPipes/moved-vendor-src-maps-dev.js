@@ -6,9 +6,7 @@ module.exports = function(gulp, plugins, pipes, locals) {
     return movedVendorSrcMapsDev;
 
     function movedVendorSrcMapsDev(config) {
-
         config = config || locals.config.bowerComponents;
-
         var sharedConfig = {
             overrides: config.overrides
         };

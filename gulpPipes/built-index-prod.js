@@ -1,9 +1,11 @@
-module.exports = function(gulp, plugins, pipes/*, locals*/) {
+module.exports = function(gulp, plugins, pipes, locals) {
 
     return builtIndexProd;
 
     // validates and injects sources into index.html, minifies and moves it to the prod environment
     function builtIndexProd(config) {
+
+        config = config || locals.config;
 
         var streams = {
             vendorScripts: pipes.movedVendorScriptsProd(config.bowerComponents),
