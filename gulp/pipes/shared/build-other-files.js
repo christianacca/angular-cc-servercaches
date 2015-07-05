@@ -4,16 +4,16 @@ module.exports = function(gulp, plugins, pipes, locals) {
 
     return buildOtherFiles;
 
-    function buildOtherFiles(buildFn){
+    function buildOtherFiles(buildFn/*, config*/){
         if (!buildFn) return null;
 
-        var locals = {
+        var buildFnCtx = {
             pipes: pipes,
             plugins: plugins,
             gulp: gulp,
             lib: lib,
             locals: locals
         };
-        return buildFn(locals);
+        return buildFn(buildFnCtx);
     }
 };

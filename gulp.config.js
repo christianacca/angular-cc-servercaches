@@ -156,6 +156,13 @@ module.exports = function (args) {
             isConcatFileOutput: true,
             outputFile: compName + '.css',
             dest: args.env === 'dev' ? compPaths.distRoot : compPaths.distRoot + compSrcFolder
+        },
+        pipesOptions: {
+            pipeArgs: {
+                watched: {
+                    isWatchStatusFileEnabled: true
+                }
+            }
         }
     };
     compConfig = _.extend(compConfig, compPaths);

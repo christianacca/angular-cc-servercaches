@@ -23,7 +23,7 @@ var pipeOptions = {
     },
     plugins: plugins
 };
-pipeOptions = _.extend({}, gc.app.pipesOptions, pipeOptions);
+pipeOptions = _.extend({}, gc.comp.pipesOptions, pipeOptions);
 var pipes = require('./gulp/blocks/loadPipes')(pipeOptions);
 
 // == TASKS ========

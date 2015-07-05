@@ -10,16 +10,16 @@ module.exports = function(gulp, plugins, pipes, locals) {
 
         config = config || locals.config;
 
-        gulp.watch([config.scripts.src.path, config.styles.src.path], _.partial(pipes.builtScripts, config));
-        gulp.watch([config.styles.src.path, config.styles.src.path], _.partial(pipes.builtStyles, config));
+        gulp.watch([config.scripts.src.path], pipes.watched(pipes.builtScripts, config));
+        gulp.watch([config.styles.src.path], pipes.watched(pipes.builtStyles, config));
 
-        var onPartialsChanged = isDev ? _.partial(pipes.builtPartials, config) : _.partial(pipes.builtScripts, config);
-        gulp.watch(config.partials.src.path, onPartialsChanged);
+        var onPartialsChanged = isDev ? pipes.builtPartials : pipes.builtScripts;
+        gulp.watch(config.partials.src.path, pipes.watched(onPartialsChanged, config));
 
-        gulp.watch(config.images.src.path, _.partial(pipes.processedImages, config));
+        gulp.watch(config.images.src.path, pipes.watched(pipes.processedImages, config));
 
         if (config.getOtherFiles) {
-            gulp.watch(config.getOtherFiles(), _.partial(pipes.buildOtherFiles, config.builtOtherFiles));
+            gulp.watch(config.getOtherFiles(), pipes.watched(_.partial(pipes.buildOtherFiles, config.builtOtherFiles), config));
         }
 
     }
