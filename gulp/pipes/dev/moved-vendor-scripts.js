@@ -1,4 +1,4 @@
-module.exports = function(gulp, plugins, pipes/*, locals*/) {
+module.exports = function(gulp, plugins, pipes, locals) {
 
     var _ = require('lodash');
 
@@ -6,8 +6,9 @@ module.exports = function(gulp, plugins, pipes/*, locals*/) {
 
     // moves vendor scripts into the dev environment
     function movedVendorScripts(config){
-        var sharedConfig = {overrides: config.overrides};
-        var scriptsConfig = _.extend({}, config.scripts, sharedConfig);
+        config = config || locals.config;
+        var sharedConfig = {overrides: config.bowerComponents.overrides};
+        var scriptsConfig = _.extend({}, config.bowerComponents.scripts, sharedConfig);
         return pipes.bowerFiles('js', scriptsConfig)
             .pipe(gulp.dest(scriptsConfig.dest));
     }

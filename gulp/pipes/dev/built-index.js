@@ -6,14 +6,14 @@ module.exports = function(gulp, plugins, pipes, locals) {
     function builtIndex(config) {
         config = config || locals.config;
         var streams = {
-            vendorScripts: pipes.movedVendorScripts(config.bowerComponents)
+            vendorScripts: pipes.movedVendorScripts(config)
                 .pipe(plugins.order(config.bowerComponents.scripts.order)),
-            compScripts: pipes.movedCompScripts(config.component).pipe(plugins.angularFilesort()),
-            appScripts: pipes.builtScripts(config.scripts).pipe(plugins.angularFilesort()),
-            vendorStyles: pipes.movedVendorStyles(config.bowerComponents)
+            compScripts: pipes.movedCompScripts(config).pipe(plugins.angularFilesort()),
+            appScripts: pipes.builtScripts(config).pipe(plugins.angularFilesort()),
+            vendorStyles: pipes.movedVendorStyles(config)
                 .pipe(plugins.order(config.bowerComponents.styles.order)),
-            compStyles: pipes.movedCompStyles(config.component),
-            appStyles: pipes.builtStyles(config.styles)
+            compStyles: pipes.movedCompStyles(config),
+            appStyles: pipes.builtStyles(config)
         };
 
         return pipes.buildIndex(streams, config)

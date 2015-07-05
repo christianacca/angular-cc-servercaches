@@ -5,7 +5,7 @@ module.exports = function(gulp, plugins, pipes, locals) {
     // moves app html source files into the dev environment
     function builtPartials(config) {
         config = config || locals.config;
-        return pipes.validatedPartials(config.partials)
+        return pipes.validatedPartials(config)
             .pipe(gulp.dest(config.partials.dest));
     }
 };

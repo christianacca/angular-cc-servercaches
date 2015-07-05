@@ -5,10 +5,11 @@ module.exports = function(gulp, plugins, pipes, locals) {
     return processedScripts;
 
     function processedScripts(config) {
+        config = config || locals.config;
 
         plugins.nunjucksRender.nunjucks.configure({ watch: false });
         var jsTplFilter = plugins.filter('**/*.tpl.js');
-        return gulp.src(config.src.path, config.src.options)
+        return gulp.src(config.scripts.src.path, config.scripts.src.options)
             .pipe(jsTplFilter)
             .pipe(plugins.data(function(f){
                 var tplData = require(path.dirname(f.path) + '\\' + path.basename(f.path, '.js') + '.json');

@@ -8,15 +8,14 @@ module.exports = function(gulp, plugins, pipes, locals) {
     // clean, build, and watch live changes
     function watch(config) {
 
-        // rebuild scripts, etc and inject them into index page
+        config = config || locals.config;
+
         gulp.watch([config.indexPage, config.scripts.src.path, config.styles.src.path], _.partial(pipes.builtIndex, config));
 
-        // watch html partials
-        var onPartialsChanged = isDev ? _.partial(pipes.builtPartials, config.partials) : _.partial(pipes.builtIndex, config);
+        var onPartialsChanged = isDev ? _.partial(pipes.builtPartials, config) : _.partial(pipes.builtIndex, config);
         gulp.watch(config.partials.src.path, onPartialsChanged);
 
-        // watch images
-        gulp.watch(config.images.src.path, _.partial(processedImages, config));
+        gulp.watch(config.images.src.path, _.partial(pipes.processedImages, config));
 
         // watch other files
         if (config.getOtherFiles) {

@@ -1,4 +1,4 @@
-module.exports = function(gulp, plugins, pipes/*, locals*/) {
+module.exports = function(gulp, plugins, pipes, locals) {
 
     var _ = require('lodash');
 
@@ -6,8 +6,9 @@ module.exports = function(gulp, plugins, pipes/*, locals*/) {
 
     // moves vendor styles into the production environment
     function moveVendorStylesProd(config){
-        var sharedConfig = {overrides: config.overrides};
-        var stylesConfig = _.extend({}, config.styles, sharedConfig);
+        config = config || locals.config;
+        var sharedConfig = {overrides: config.bowerComponents.overrides};
+        var stylesConfig = _.extend({}, config.bowerComponents.styles, sharedConfig);
         // todo: find a way to concatenate existing minified css that does not break sourcemap concept
         // ie combining all the minified files into one also includes sourceMapUrl for each css file - this
         // isn't supported by browsers
