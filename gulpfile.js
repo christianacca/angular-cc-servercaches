@@ -1,5 +1,5 @@
 var args = require('yargs').argv;
-var gulp = require('gulp');
+var gulp = require('./gulp/blocks/gulpPlumbed');
 var plugins = require('gulp-load-plugins')();
 var es = require('event-stream');
 var lib = require('bower-files');

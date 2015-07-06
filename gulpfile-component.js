@@ -1,5 +1,5 @@
 var args = require('yargs').argv;
-var gulp = require('gulp');
+var gulp = require('./gulp/blocks/gulpPlumbed');
 var plugins = require('gulp-load-plugins')();
 var _ = require('lodash');
 
