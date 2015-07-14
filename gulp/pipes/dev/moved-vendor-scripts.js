@@ -8,7 +8,9 @@ module.exports = function(gulp, plugins, pipes, locals) {
     function movedVendorScripts(config){
         config = config || locals.config;
         var sharedConfig = {overrides: config.bowerComponents.overrides};
-        var scriptsConfig = _.extend({}, config.bowerComponents.scripts, sharedConfig);
+        var scriptsConfig = _.extend({},
+            config.bowerComponents.scripts, sharedConfig,
+            { newerThan: config.bowerComponents.scripts.dest });
         return pipes.bowerFiles('js', scriptsConfig)
             .pipe(gulp.dest(scriptsConfig.dest));
     }

@@ -60,3 +60,9 @@ gulp.task('app-watch', ['app-clean-build', 'validate-devserver-scripts'], _.part
 
 // default task builds for dev
 gulp.task('default', ['app-clean-build']);
+
+gulp.task('testCopy', function(){
+    return gulp.src(gc.app.srcRoot + 'bower_components/**/*.js')
+        .pipe(plugins.changed(gc.app.distRoot + 'bower_components'))
+        .pipe(gulp.dest(gc.app.distRoot + 'bower_components'));
+});

@@ -48,6 +48,7 @@ module.exports = function(gulp, plugins/*, pipes, locals*/) {
             plugins.util.noop();
 
         return gulp.src(files)
-            .pipe(maybeEnforceFileExists);
+            .pipe(options.newerThan ? plugins.changed(options.newerThan) : plugins.util.noop())
+            .pipe(plugins.util.noop());
     }
 };
