@@ -11,7 +11,8 @@ var _ = require('lodash');
  */
 
 args.env = args.env || 'dev';
-var gc = require('./gulp.config')(args);
+var configFactory = require('./gulp/blocks/configFactory')(args);
+var config = configFactory.createCompConfig(require('./gulp.comp.config'));
 
 // == PIPE SEGMENTS ========
 
@@ -19,11 +20,11 @@ var gc = require('./gulp.config')(args);
 var pipeOptions = {
     locals: {
         args: args,
-        config: gc.comp
+        config: config
     },
     plugins: plugins
 };
-pipeOptions = _.extend({}, gc.comp.pipesOptions, pipeOptions);
+pipeOptions = _.extend({}, config.pipesOptions, pipeOptions);
 var pipes = require('./gulp/blocks/loadPipes')(pipeOptions);
 
 // == TASKS ========
@@ -31,7 +32,7 @@ var pipes = require('./gulp/blocks/loadPipes')(pipeOptions);
 
 // default task builds for dev
 gulp.task('default', ['comp-build']);
-gulp.task('comp-clean', _.partial(pipes.clean, gc.comp.distRoot));
-gulp.task('comp-build', _.partial(pipes.builtComp, gc.comp));
-gulp.task('comp-clean-build', ['comp-clean'], _.partial(pipes.builtComp, gc.comp));
-gulp.task('comp-watch', ['comp-clean-build'], _.partial(pipes.watchComp, gc.comp));
+gulp.task('comp-clean', _.partial(pipes.clean, config.distRoot));
+gulp.task('comp-build', _.partial(pipes.builtComp, config));
+gulp.task('comp-clean-build', ['comp-clean'], _.partial(pipes.builtComp, config));
+gulp.task('comp-watch', ['comp-clean-build'], _.partial(pipes.watchComp, config));

@@ -19,7 +19,13 @@ module.exports = function(gulp, plugins, pipes, locals) {
         gulp.watch(config.images.src.path, pipes.watched(pipes.processedImages, config));
 
         if (config.getOtherFiles) {
-            gulp.watch(config.getOtherFiles(), pipes.watched(_.partial(pipes.buildOtherFiles, config.builtOtherFiles), config));
+            var buildFnCtx = {
+                pipes: pipes,
+                plugins: plugins,
+                gulp: gulp,
+                locals: _.extend({}, locals, { config: config })
+            };
+            gulp.watch(config.getOtherFiles(buildFnCtx), pipes.watched(_.partial(pipes.buildOtherFiles, config.builtOtherFiles), config));
         }
 
     }

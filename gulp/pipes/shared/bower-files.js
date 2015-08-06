@@ -47,8 +47,10 @@ module.exports = function(gulp, plugins/*, pipes, locals*/) {
             plugins.expectFile({checkRealFile: true, reportMissing: true}, expectedFiles) :
             plugins.util.noop();
 
+        // note: can't use the `changed` plugin yet until upstream code is changed to pipe all files regardless
+        // of whether they have changed into the `inject` plugin
         return gulp.src(files)
-            .pipe(options.newerThan ? plugins.changed(options.newerThan) : plugins.util.noop())
-            .pipe(plugins.util.noop());
+            //.pipe(options.newerThan ? plugins.changed(options.newerThan) : plugins.util.noop())
+            .pipe(maybeEnforceFileExists);
     }
 };

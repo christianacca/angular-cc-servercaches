@@ -19,7 +19,13 @@ module.exports = function(gulp, plugins, pipes, locals) {
 
         // watch other files
         if (config.getOtherFiles) {
-            gulp.watch(config.getOtherFiles(), pipes.watched(_.partial(pipes.buildOtherFiles, config.builtOtherFiles)));
+            var buildFnCtx = {
+                pipes: pipes,
+                plugins: plugins,
+                gulp: gulp,
+                locals: _.extend({}, locals, { config: config })
+            };
+            gulp.watch(config.getOtherFiles(buildFnCtx), pipes.watched(_.partial(pipes.buildOtherFiles, config.builtOtherFiles)));
         }
 
         // watch triggered component builds

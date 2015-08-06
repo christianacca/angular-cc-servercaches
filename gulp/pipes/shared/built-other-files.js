@@ -4,6 +4,8 @@ module.exports = function(gulp, plugins, pipes, locals) {
 
     function builtOtherFiles(config){
         config = config || locals.config;
-        return pipes.buildOtherFiles(config.builtOtherFiles);
+        if (!config.builtOtherFiles) return null;
+
+        return pipes.buildOtherFiles(config.builtOtherFiles.bind(config), config);
     }
 };
